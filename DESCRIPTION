@@ -1,0 +1,30 @@
+Package: cosmic
+Type: Package
+Title: Conditional Ordinal Stereotype Model for Incident-level Calibration
+Version: 0.0.0.9000
+Authors@R: c(
+    person(given = "COSMIC", family = "Developers", role = c("aut", "cre"), email = "devnull@example.com")
+)
+Description: Implements core tooling for the COSMIC model
+    (Conditional Ordinal Stereotype Model for Incident-level Calibration),
+    including Markov chain Monte Carlo fitting utilities and summary methods.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Imports:
+    Rcpp,
+    RcppParallel,
+    stats,
+    utils
+LinkingTo:
+    Rcpp,
+    RcppParallel
+Suggests:
+    testthat (>= 3.0.0),
+    devtools,
+    knitr,
+    rmarkdown
+Config/testthat/edition: 3
+VignetteBuilder: knitr

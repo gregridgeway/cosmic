@@ -1,0 +1,12 @@
+.Rhistory
+.RData
+.Rproj.user
+*.Rproj
+*.o
+*.so
+*.dll
+*.dylib
+/src/*.o
+/src/*.so
+*.tar.gz
+/cosmic.Rcheck/

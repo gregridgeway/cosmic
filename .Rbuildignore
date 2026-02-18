@@ -1,0 +1,7 @@
+^\.git$
+^\.gitignore$
+^manuscript$
+^output$
+^README\.Rmd$
+^\.Rproj\.user$
+^.*\.Rproj$
