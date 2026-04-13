@@ -20,7 +20,7 @@ test_that("invalid y is rejected", {
   d <- data.frame(
     id = c(1,1),
     idOff = c(1,2),
-    y = c(1,3)  # gap → should fail
+    y = c(1,3)  # gap should fail
   )
 
   expect_error(
@@ -32,9 +32,9 @@ test_that("invalid y is rejected", {
 test_that("cosmic runs on tiny dataset", {
 
   d <- data.frame(
-    id = c(1,1,2,2),
-    idOff = c(1,2,1,2),
-    y = c(1,2,1,2)
+    id = c(1,1,2,2,2),
+    idOff = c(1,2,1,2,3),
+    y = c(1,2,1,4,1)
   )
 
   fit <- cosmic(d, id, idOff, y,

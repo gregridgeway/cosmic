@@ -1,0 +1,79 @@
+---
+title: "getting-started"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{getting-started}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(cosmic)
+```
+
+
+```{r}
+
+################################################################################
+# simulate with 3 officers
+################################################################################
+set.seed(20010618)
+nIncidents <- 50
+# number of officers per incident
+nOff <- sample(2:3, nIncidents, replace = TRUE)
+# randomly assign officers to incidents
+d <- data.frame(id=rep(1:nIncidents, nOff),
+                idOff=sapply(nOff, function(x) sample(1:3, x)) |> unlist())
+# simulate with these parameters
+lambda <- -c(0.5, 1, 2)
+s <- c(0, 1, 1.5, 2)
+# translate lambda & s to probabilities of using type of force
+p <- t(exp(s %*% t(lambda)))
+p <- p/rowSums(p)
+# simulate force used
+d$p <- p[d$idOff,]
+d$y <- apply(d$p, 1, function(x) sample(1:4, 1, prob=x))
+
+# check empirical probabilities resemble p
+p
+aggregate(cbind(y==1,y==2,y==3,y==4)~idOff, data=d, mean)
+
+
+COSMOff3 <- cosmic(d, 
+                   incidentID = id,
+                   officerID  = idOff,
+                   y          = y)
+```
+
+
+```{r}
+a <- extract(COSMOff3$stanSamp, pars=c("lambda","sDelta"))
+lambda - lambda[1]
+apply(a$lambda - a$lambda[,1], 2, quantile, probs=c(0.025,0.5,0.975))
+```
+
+```{r}
+plot(a$lambda[,2]-a$lambda[,1], a$lambda[,3]-a$lambda[,1])
+```
+
+```{r}
+s
+c(0,1,colMeans(a$sDelta)) |> cumsum()
+```
+
+```{r}
+hist(a$lambda[,2]-a$lambda[,1])
+abline(v=lambda[2]-lambda[1])
+```
+
+```{r}
+hist(a$lambda[,3]-a$lambda[,1])
+abline(v=lambda[3]-lambda[1])
+```

@@ -1,178 +1,112 @@
 functions {
 
-  // No-repeat Heap's algorithm for all type of force combos
-  //   Fast when n<=8, impossibly slow n>15
-  real denomHeaps(array[] int ivY, vector rvLambda, vector rvS, int index, int n)
-  {
-    real dSum = 0.0;
-    int fCheck = 1;
-    int iTemp=0;
-    array[n] int ivYTemp;
+  real logDenomDP_logspace(vector lambda, vector s, int[] y, int nOff) {
+    int m = nOff;
+    int J = num_elements(s);
 
-    // end state for recursion
-    if(index >= n) {
-      return exp(rvLambda[index] * rvS[ivY[index]]);
+    matrix[m, J] logP;
+    real logK = 0;
+
+    for (i in 1:m) {
+      vector[J] eta;
+      for (j in 1:J)
+        eta[j] = lambda[i] * s[j];
+
+      real log_norm = log_sum_exp(eta);
+
+      for (j in 1:J)
+        logP[i, j] = eta[j] - log_norm;
+
+      logK += log_norm;
     }
 
-    // make a copy because stan does not allow swapping of ivY[]
-    for(j in 1:n)
-    {
-      ivYTemp[j] = ivY[j];
+    int k[J];
+    for (j in 1:J) k[j] = 0;
+    for (i in 1:m) k[y[i]] += 1;
+
+    if (J == 1) return logK;
+
+    int d = J - 1;
+
+    int dims[d];
+    int total_non_J = 0;
+    int total_states = 1;
+
+    for (j in 1:d) {
+      dims[j] = k[j] + 1;
+      total_non_J += k[j];
+      total_states *= dims[j];
     }
 
-    for(i in index:n) {
-      fCheck = 1;
-      for(j in index:(i-1)) // stan will not run loop if i-1 < index
-      {
-        // to avoid including repeats
-        if(ivYTemp[j] == ivYTemp[i])
-        {
-           fCheck = 0;
-           break;
-        }
-      }
-
-      if (fCheck) {
-        // swap Y[index] and Y[i]
-        iTemp = ivYTemp[index];
-        ivYTemp[index] = ivYTemp[i];
-        ivYTemp[i] = iTemp;
-
-        // Heaps' recursive step
-        dSum += exp(rvLambda[index]*rvS[ivYTemp[index]]) *
-                 denomHeaps(ivYTemp, rvLambda, rvS, index + 1, n);
-
-        // put Y[index] and Y[i] back in original place
-        iTemp = ivYTemp[index];
-        ivYTemp[index] = ivYTemp[i];
-        ivYTemp[i] = iTemp;
-      }
-    }
-
-    return dSum;
-  } // end denomHeaps()
-
-
-  // Compute row-major strides for a (d)-dimensional array with extents dims[j].
-  //   stride[1] = 1, stride[j] = prod_{t<j} dims[t]
-  //   allows for O(1) indexing of states of u
-  int[] compute_strides(int[] dims, int d) {
     int strides[d];
     strides[1] = 1;
-    for (j in 2:d) {
+    for (j in 2:d)
       strides[j] = strides[j-1] * dims[j-1];
-    }
-    return strides;
-  }
 
+    vector[total_states] log_dp_old;
+    vector[total_states] log_dp_new;
 
-real logDenomDP_logspace(vector lambda, vector s, int[] y, int nOff) {
-  int m = nOff;
-  int J = num_elements(s);
+    log_dp_old = rep_vector(negative_infinity(), total_states);
+    log_dp_old[1] = 0;
 
-  matrix[m, J] logP;
-  real logK = 0;
+    int kJ = k[J];
 
-  for (i in 1:m) {
-    vector[J] eta;
-    for (j in 1:J)
-      eta[j] = lambda[i] * s[j];
+    int u[d];
 
-    real log_norm = log_sum_exp(eta);
+    for (r in 1:m) {
 
-    for (j in 1:J)
-      logP[i, j] = eta[j] - log_norm;
+      log_dp_new = rep_vector(negative_infinity(), total_states);
 
-    logK += log_norm;
-  }
+      int lo = max(0, (r-1) - kJ);
+      int hi = min(r-1, total_non_J);
 
-  int k[J];
-  for (j in 1:J) k[j] = 0;
-  for (i in 1:m) k[y[i]] += 1;
+      for (j in 1:d) u[j] = 0;
+      int sum_u = 0;
 
-  if (J == 1) return logK;
+      for (idx in 1:total_states) {
 
-  int d = J - 1;
+        real val = log_dp_old[idx];
 
-  int dims[d];
-  int total_non_J = 0;
-  int total_states = 1;
+        if (sum_u >= lo && sum_u <= hi) {
 
-  for (j in 1:d) {
-    dims[j] = k[j] + 1;
-    total_non_J += k[j];
-    total_states *= dims[j];
-  }
+          // category J
+          log_dp_new[idx] =
+            log_sum_exp(log_dp_new[idx],
+                        val + logP[r, J]);
 
-  int strides[d];
-  strides[1] = 1;
-  for (j in 2:d)
-    strides[j] = strides[j-1] * dims[j-1];
-
-  vector[total_states] log_dp_old;
-  vector[total_states] log_dp_new;
-
-  log_dp_old = rep_vector(negative_infinity(), total_states);
-  log_dp_old[1] = 0;
-
-  int kJ = k[J];
-
-  int u[d];
-
-  for (r in 1:m) {
-
-    log_dp_new = rep_vector(negative_infinity(), total_states);
-
-    int lo = max(0, (r-1) - kJ);
-    int hi = min(r-1, total_non_J);
-
-    for (j in 1:d) u[j] = 0;
-    int sum_u = 0;
-
-    for (idx in 1:total_states) {
-
-      real val = log_dp_old[idx];
-
-      if (sum_u >= lo && sum_u <= hi) {
-
-        // category J
-        log_dp_new[idx] =
-          log_sum_exp(log_dp_new[idx],
-                      val + logP[r, J]);
-
-        // categories 1..J-1
-        for (j in 1:d) {
-          if (u[j] < k[j]) {
-            int new_idx = idx + strides[j];
-            log_dp_new[new_idx] =
-              log_sum_exp(log_dp_new[new_idx],
-                          val + logP[r, j]);
+          // categories 1..J-1
+          for (j in 1:d) {
+            if (u[j] < k[j]) {
+              int new_idx = idx + strides[j];
+              log_dp_new[new_idx] =
+                log_sum_exp(log_dp_new[new_idx],
+                            val + logP[r, j]);
+            }
           }
+        }
+
+        // odometer
+        for (j in 1:d) {
+          u[j] += 1;
+          sum_u += 1;
+
+          if (u[j] < dims[j])
+            break;
+
+          sum_u -= u[j];
+          u[j] = 0;
         }
       }
 
-      // odometer
-      for (j in 1:d) {
-        u[j] += 1;
-        sum_u += 1;
-
-        if (u[j] < dims[j])
-          break;
-
-        sum_u -= u[j];
-        u[j] = 0;
-      }
+      log_dp_old = log_dp_new;
     }
 
-    log_dp_old = log_dp_new;
-  }
+    int target_idx = 1;
+    for (j in 1:d)
+      target_idx += k[j] * strides[j];
 
-  int target_idx = 1;
-  for (j in 1:d)
-    target_idx += k[j] * strides[j];
-
-  return logK + log_dp_old[target_idx];
-} // end logDenomDP_logspace
+    return logK + log_dp_old[target_idx];
+  } // end logDenomDP_logspace
 
 
   // for computing cond log likelihood in parallel
@@ -184,8 +118,7 @@ real logDenomDP_logspace(vector lambda, vector s, int[] y, int nOff) {
                    vector rvLambda,
                    vector rvSTemp,
                    int nRows,
-                   int nMaxOffs,
-                   int useDP)
+                   int nMaxOffs)
   {
     int  i=0;
     int  iCurrentID = 0;
@@ -229,10 +162,6 @@ real logDenomDP_logspace(vector lambda, vector s, int[] y, int nOff) {
         }
         // else: identical y → contributes 0
       }
-      else if (useDP == 0) { //    remove options in production
-        rDenom = denomHeaps(ivYTemp, rvLambdaTemp, rvSTemp, 1, nOff);
-        rLogLL -= log(rDenom);
-      }
       else {
         rLogLL -= logDenomDP_logspace(rvLambdaTemp, rvSTemp, ivYTemp, nOff);
       }
@@ -252,8 +181,7 @@ real logDenomDP_logspace(vector lambda, vector s, int[] y, int nOff) {
              int nRows,
              int nMaxOffs,
              int nForceTypes,
-             int grainsize,
-             int useDP)
+             int grainsize)
   {
     vector[nForceTypes] rvSTemp;
     real rLogLL = 0.0;
@@ -274,8 +202,7 @@ real logDenomDP_logspace(vector lambda, vector s, int[] y, int nOff) {
                         rvLambda,
                         rvSTemp,
                         nRows,
-                        nMaxOffs,
-                        useDP);
+                        nMaxOffs);
 
     return rLogLL;
   } // end logCL()
@@ -322,6 +249,5 @@ model {
   // conditional likelihood term
   target += logCL(y, id, idOff, startIndex,
                   lambda, sDelta, nRows, nMaxOffs, nForceTypes,
-                  1,  // grainsize
-                  1); // use dynamic program
+                  1);  // grainsize
 }

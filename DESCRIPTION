@@ -1,6 +1,6 @@
 Package: cosmic
 Title: Conditional Ordinal Stereotype Model for Identification and Comparison
-Version: 0.0.0.9000
+Version: 0.5
 Authors@R: 
     person("Greg", "Ridgeway", , "gridge@upenn.edu", role = c("aut", "cre"))
 Description: Implements the Conditional Ordinal Stereotype Model for Identification and Comparison (COSMIC), a method for analyzing ordinal outcomes observed across multiple actors within shared events. The model uses a conditional likelihood to remove event-level confounding and estimate actor-specific propensities relative to their peers. Efficient computation is achieved via a dynamic programming algorithm for the Poisson-multinomial normalization term, enabling scalable estimation with Markov chain Monte Carlo. The package provides tools for data preparation, model fitting using Stan, and extraction of posterior summaries for comparative inference. Estimation of police officer propensity to escalate force is the primary motivation for the model.
@@ -8,6 +8,7 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
+Depends: R (>= 4.1.0)
 Suggests: 
     knitr,
     rmarkdown,
@@ -15,4 +16,7 @@ Suggests:
 Config/testthat/edition: 3
 VignetteBuilder: knitr
 Imports: 
-    rstan
+    dplyr,
+    rlang,
+    rstan,
+    stats

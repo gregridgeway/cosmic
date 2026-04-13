@@ -2,7 +2,7 @@
 % Please edit documentation in R/cosmic.R
 \name{cosmic}
 \alias{cosmic}
-\title{Fit Conditional Ordinal Stereotype Model}
+\title{Fit the Conditional Ordinal Stereotype Model (COSMIC)}
 \usage{
 cosmic(
   data,
@@ -13,9 +13,84 @@ cosmic(
   priorSD_sDiff = 1,
   iter = 2000,
   chains = 4,
-  threads = 2
+  cores = 1,
+  threads = 8
 )
 }
+\arguments{
+\item{data}{A data frame containing one row per actor-event observation}
+
+\item{incidentID}{A column (unquoted) identifying the event or incident}
+
+\item{officerID}{A column (unquoted) identifying the actor (e.g., officer)}
+
+\item{y}{A column (unquoted) giving the ordinal outcome. Values must be consecutive
+integers starting at 1 (e.g., 1, 2, 3, ...)}
+
+\item{priorSD_lambda}{Prior standard deviation for the actor-specific parameters
+\eqn{\lambda}. Default is 2}
+
+\item{priorSD_sDiff}{Prior standard deviation for the differences between adjacent
+ordinal scale parameters}
+
+\item{iter}{Number of MCMC iterations per chain}
+
+\item{chains}{Number of Markov chains}
+
+\item{cores}{Number of chains to run in parallel. When using within-chain
+parallelization (e.g., via \code{reduce_sum}), this should be set so that
+\code{cores * threads_per_chain} does not exceed the number of available CPU cores}
+
+\item{threads}{Number of threads per chain used for within-chain parallelization}
+}
+\value{
+An object of class \code{"cosmic_fit"} containing:
+\item{fit}{The fitted \code{stanfit} object.}
+\item{data}{The processed data passed to Stan.}
+}
 \description{
-Fit Conditional Ordinal Stereotype Model
+Fits the Conditional Ordinal Stereotype Model for Identification and Comparison (COSMIC)
+to ordinal outcomes observed across multiple actors within shared events (e.g., officers
+within incidents). The model uses a conditional likelihood to remove event-level
+confounding and estimate actor-specific latent propensities relative to their peers.
+}
+\details{
+The likelihood is evaluated using a dynamic programming algorithm for the
+Poisson-multinomial normalization term, enabling efficient computation for incidents
+involving multiple actors. Posterior inference is performed via Markov chain Monte Carlo
+using \pkg{rstan}.
+
+The COSMIC model is an ordinal regression model that estimates actor-specific latent
+propensities while conditioning on the set of outcomes observed within each event.
+This conditioning removes all event-level factors that are shared across actors,
+allowing for comparisons that are invariant to environmental differences.
+
+The normalization term in the conditional likelihood involves a sum over permutations
+consistent with the observed counts of outcome categories. This is computed using a
+dynamic programming algorithm to avoid explicit enumeration.
+
+Parallel computation is supported both across chains and within chains. When specifying
+\code{cores} and \code{threads}, users should ensure that total CPU usage remains within
+hardware limits.
+}
+\examples{
+\dontrun{
+d <- data.frame(
+  id = c(1,1,2,2),
+  idOff = c(1,2,1,2),
+  y = c(1,2,1,3)
+)
+
+fit <- cosmic(d, id, idOff, y,
+              iter = 1000,
+              chains = 2,
+              cores = 1,
+              threads = 4)
+
+print(fit)
+}
+
+}
+\seealso{
+\code{\link{posterior}}, \code{\link{summary.cosmic_fit}}
 }
