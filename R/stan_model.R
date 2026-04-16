@@ -1,16 +1,23 @@
-.stan_model_cache <- NULL
-
-#' Compile and cache Stan model
+#' Load the COSMIC Stan model
 #'
-#' Internal helper that locates the Stan file and compiles it.
+#' Internal helper that locates the bundled Stan model. When a serialized
+#' \code{stanmodel} object is available it is loaded directly, avoiding a fresh
+#' compilation during tests and routine package use. Otherwise the Stan source
+#' file is compiled with \pkg{rstan}. Compilation is cached automatically by
+#' \pkg{rstan} when \code{auto_write = TRUE}.
 #'
 #' @noRd
-.get_stan_model <- function()
-{
-  if (!is.null(.stan_model_cache)) return(.stan_model_cache)
+.get_stan_model <- function() {
+  rds_path <- system.file("stan", "cosmic.rds", package = "cosmic")
+  if (rds_path != "" && file.exists(rds_path)) {
+    return(readRDS(rds_path))
+  }
 
   path <- system.file("stan", "cosmic.stan", package = "cosmic")
-  .stan_model_cache <<- rstan::stan_model(path)
 
-  return(.stan_model_cache)
+  if (path == "") {
+    stop("Bundled COSMIC Stan model not found in package.", call. = FALSE)
+  }
+
+  rstan::stan_model(file = path)
 }

@@ -71,19 +71,34 @@ cosmic <- function(data, incidentID, officerID, y,
                    iter = 2000,
                    chains  = 4,
                    cores   = 1,
-                   threads = 8) {
+                   threads = 8)
+{
+  old_threads <- Sys.getenv("STAN_NUM_THREADS")
 
+  on.exit({
+    if (old_threads == "") {
+      Sys.unsetenv("STAN_NUM_THREADS")
+    } else {
+      Sys.setenv(STAN_NUM_THREADS = old_threads)
+    }
+  }, add = TRUE)
+
+  Sys.setenv(STAN_NUM_THREADS = threads)
+  rstan::rstan_options(threads_per_chain = threads)
+
+  message("Preparing data...")
   stanData <- prep_cosmic_data(data, {{incidentID}}, {{officerID}}, {{y}})
 
   stanData$rPriorSD_lambda <- priorSD_lambda
   stanData$rPriorSD_sDiff  <- priorSD_sDiff
 
-  inits <- make_inits(stanData)
+  message("Setting initial values...")
+  inits <- make_inits(stanData, chains)
 
-  Sys.setenv(STAN_NUM_THREADS = threads)
-
+  message("Loading conditional ordinal stereotype model in Stan...")
   mod <- .get_stan_model()
 
+  message("Sampling...")
   fit <- rstan::sampling(
     mod,
     data   = stanData,
@@ -97,3 +112,6 @@ cosmic <- function(data, incidentID, officerID, y,
     class = "cosmic_fit"
   )
 }
+
+
+

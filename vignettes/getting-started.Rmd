@@ -18,8 +18,11 @@ knitr::opts_chunk$set(
 library(cosmic)
 ```
 
+This vignette illustrates the basic COSMIC workflow on a small simulated
+dataset. The modeling code is shown but not executed during vignette builds,
+since fitting the Stan model requires a working C++ toolchain and can be slow.
 
-```{r}
+```{r, eval = FALSE}
 
 ################################################################################
 # simulate with 3 officers
@@ -53,27 +56,28 @@ COSMOff3 <- cosmic(d,
 ```
 
 
-```{r}
-a <- extract(COSMOff3$stanSamp, pars=c("lambda","sDelta"))
+```{r, eval = FALSE}
+a <- posterior(COSMOff3, pars=c("lambda","sDelta"))
 lambda - lambda[1]
+# a$lambda: iterations x officers matrix
 apply(a$lambda - a$lambda[,1], 2, quantile, probs=c(0.025,0.5,0.975))
 ```
 
-```{r}
+```{r, eval = FALSE}
 plot(a$lambda[,2]-a$lambda[,1], a$lambda[,3]-a$lambda[,1])
 ```
 
-```{r}
+```{r, eval = FALSE}
 s
 c(0,1,colMeans(a$sDelta)) |> cumsum()
 ```
 
-```{r}
+```{r, eval = FALSE}
 hist(a$lambda[,2]-a$lambda[,1])
 abline(v=lambda[2]-lambda[1])
 ```
 
-```{r}
+```{r, eval = FALSE}
 hist(a$lambda[,3]-a$lambda[,1])
 abline(v=lambda[3]-lambda[1])
 ```

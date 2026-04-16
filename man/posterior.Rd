@@ -2,9 +2,12 @@
 % Please edit documentation in R/posterior.R
 \name{posterior}
 \alias{posterior}
+\alias{posterior.cosmic_fit}
 \title{Extract posterior draws from a COSMIC model}
 \usage{
 posterior(object, ...)
+
+\method{posterior}{cosmic_fit}(object, pars = NULL, tidy = FALSE, ...)
 }
 \arguments{
 \item{object}{A fitted object of class \code{"cosmic_fit"}.}

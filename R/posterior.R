@@ -5,11 +5,6 @@
 #' dependence on \pkg{rstan} in user code.
 #'
 #' @param object A fitted object of class \code{"cosmic_fit"}.
-#' @param pars Optional character vector of parameter names to extract
-#'   (e.g., \code{"lambda"}, \code{"sDelta"}). Defaults to all parameters.
-#' @param tidy Logical; if \code{FALSE} (default), returns a list of arrays
-#'   as in \code{rstan::extract()}. If \code{TRUE}, returns a data frame
-#'   with one row per draw.
 #' @param ... Additional arguments passed to \code{rstan::extract()}.
 #'
 #' @return
@@ -38,6 +33,12 @@ posterior <- function(object, ...) {
 }
 
 
+#' @rdname posterior
+#' @param pars Optional character vector of parameter names to extract
+#'   (e.g., \code{"lambda"}, \code{"sDelta"}). Defaults to all parameters.
+#' @param tidy Logical; if \code{FALSE} (default), returns a list of arrays
+#'   as in \code{rstan::extract()}. If \code{TRUE}, returns a data frame
+#'   with one row per draw.
 #' @export
 posterior.cosmic_fit <- function(object, pars = NULL, tidy = FALSE, ...) {
 

@@ -1,4 +1,5 @@
 library(cosmic)
+library(xtable)
 
 set.seed(20010618)
 
@@ -48,27 +49,20 @@ fit <- cosmic(
 # -----------------------
 print(fit)
 
-# extract posterior draws
-draws <- posterior(fit)
+# summarize all officers relative to their peers
+offSummary <- officer_summary(fit)
+offSummary
 
-# posterior means of lambda
-#   only differences are identifiable
-#   compare with lambda[1]
-lambda_post_mean <- colMeans(draws$lambda - draws$lambda[,1])
+# focus on officers with strong posterior evidence of being in the
+# upper or lower tail of their peer group
+outliers <- outlier_report(fit, prob_outlier = 0.8)
+outliers
 
-# compare to truth (up to scale/shift)
-plot(lambda_true-lambda_true[1],
-     lambda_post_mean,
-     xlab = "True lambda",
-     ylab = "Estimated lambda",
-     main = "COSMIC recovery (relative scale)")
-abline(0, 1, col = "red")
-
-# -----------------------
-# Rank officers
-# -----------------------
-
-# simple ranking by posterior mean
-rank_est <- order(lambda_post_mean)
-
-head(rank_est)
+# optional table display for reports
+xtable(
+  outliers,
+  digits = c(0, 0, 0, 0,
+             rep(0, fit$data$nForceTypes),
+             2, 2, 2, 2, 2)
+) |>
+  print(include.rownames = FALSE)

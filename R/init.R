@@ -5,7 +5,7 @@
 #' are used to improve robustness of sampling and reduce sensitivity to
 #' starting values.
 #'
-#' The function returns a list of length equal to the number of chains,
+#' The function returns a list of length \code{chains},
 #' where each element is a named list containing initial values for:
 #' \itemize{
 #'   \item \code{lambda}: actor-specific latent parameters
@@ -38,6 +38,9 @@
 #'   Must include elements \code{y}, \code{idOff}, \code{nOff}, and
 #'   \code{nForceTypes}
 #'
+#' @param chains Number of Markov chains, corresponding to the number of sets
+#'   of initial values to generate
+#'
 #' @return A list of length equal to the number of chains, where each element
 #'   is a named list of initial values compatible with \code{rstan::sampling()}
 #'
@@ -51,7 +54,9 @@
 #' the ordinal scale remains strictly increasing.
 #'
 #' @noRd
-make_inits <- function(stanData) {
+make_inits <- function(stanData, chains = 4) {
+
+  if(chains < 1) stop("chains must be greater than or equal to 1")
 
   # so that init s is 0, 1, equally spaced values up to 2
   sDeltaInit <- rep(1 / (stanData$nForceTypes - 2),
@@ -64,17 +69,37 @@ make_inits <- function(stanData) {
     a <- rep(0, length(a))
   }
 
-  list(
-    list(lambda = rep(0, stanData$nOff),
-         sDelta = sDeltaInit),
+  inits <- list()
 
-    list(lambda = sample(c(-1,0,1), stanData$nOff, TRUE),
-         sDelta = sDeltaInit),
+  inits[[1]] <- list(lambda = rep(0, stanData$nOff),
+                     sDelta = as.vector(sDeltaInit))
+  if(chains > 1)
+  {
+    inits[[2]] <- list(lambda = sample(c(-1,0,1), stanData$nOff, TRUE),
+                       sDelta = sDeltaInit)
+  }
+  if(chains > 2)
+  {
+    inits[[3]] <- list(lambda = runif(stanData$nOff, -2, 2),
+                       sDelta = runif(stanData$nForceTypes-2, 0.05, 1))
+  }
+  if(chains > 3)
+  {
+    inits[[4]] <- list(lambda = a, sDelta = sDeltaInit)
+  }
+  if(chains > 4)
+  {
+    for(i in seq(5, chains))
+    {
+      inits[[i]] <- list(lambda = runif(stanData$nOff, -2, 2),
+                         sDelta = runif(stanData$nForceTypes-2, 0.05, 1))
+    }
+  }
 
-    list(lambda = runif(stanData$nOff, -2, 2),
-         sDelta = runif(stanData$nForceTypes-2, 0.05, 1)),
+  for(i in seq_len(chains))
+  {
+    inits[[i]]$sDelta <- array(inits[[i]]$sDelta, dim=stanData$nForceTypes-2)
+  }
 
-    list(lambda = a,
-         sDelta = sDeltaInit)
-  )
+  return(inits)
 }

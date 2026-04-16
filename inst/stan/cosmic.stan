@@ -124,7 +124,7 @@ functions {
     int  iCurrentID = 0;
     int  nOff = 0;
     real rLogLL = 0.0;
-    real rDenom = 0.0;
+    real rNumerator = 0.0;
 
     array[nMaxOffs] int ivYTemp;
     vector[nMaxOffs]    rvLambdaTemp;
@@ -135,11 +135,12 @@ functions {
     while((i<=nRows) && (ivID[i] <= iEnd))
     {
       nOff = 0; // count of officers in this incident
+      rNumerator = 0.0;
       iCurrentID = ivID[i];
       while((i<=nRows) && (ivID[i] == iCurrentID)) // still the same incident?
       {
          // cond log likelihood numerator
-         rLogLL += rvLambda[ivOffID[i]]*rvSTemp[ivY[i]];
+         rNumerator += rvLambda[ivOffID[i]]*rvSTemp[ivY[i]];
 
          // accumulate data for current incident
          nOff = nOff+1;
@@ -158,12 +159,13 @@ functions {
           real b = rvLambdaTemp[1] * rvSTemp[ivYTemp[2]]
                  + rvLambdaTemp[2] * rvSTemp[ivYTemp[1]];
 
-          rLogLL -= log_sum_exp(a, b);
+          rLogLL += rNumerator - log_sum_exp(a, b);
         }
-        // else: identical y → contributes 0
+        // else: identical y -> contributes 0
       }
       else {
-        rLogLL -= logDenomDP_logspace(rvLambdaTemp, rvSTemp, ivYTemp, nOff);
+        rLogLL += rNumerator -
+           logDenomDP_logspace(rvLambdaTemp, rvSTemp, ivYTemp, nOff);
       }
     }
 

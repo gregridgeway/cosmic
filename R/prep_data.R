@@ -4,15 +4,12 @@
 #' passed to Stan.
 #'
 #' @noRd
-prep_cosmic_data <- function(data, incidentID, officerID, y) {
-  incident_quo <- rlang::enquo(incidentID)
-  officer_quo  <- rlang::enquo(officerID)
-  y_quo        <- rlang::enquo(y)
-
+prep_cosmic_data <- function(data, incidentID, officerID, y)
+{
   d <- data.frame(
-    idOrig    = rlang::eval_tidy(incident_quo, data),
-    idOffOrig = rlang::eval_tidy(officer_quo,  data),
-    y         = rlang::eval_tidy(y_quo,        data)
+    idOrig    = dplyr::pull(data, {{ incidentID }}),
+    idOffOrig = dplyr::pull(data, {{ officerID }}),
+    y         = dplyr::pull(data, {{ y }})
   )
 
   idsWithInfo <- d |>
