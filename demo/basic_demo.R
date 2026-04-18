@@ -5,30 +5,7 @@ library(xtable)
 # Simulate simple data
 # -----------------------
 
-# nIncidents <- 100
-# nOfficers  <- 5
-#
-# # latent officer propensities
-# lambda_true <- rnorm(nOfficers, 0, 1)
-#
-# # ordinal scale
-# s <- c(0, 1, 1.5, 2)
-#
-# # number of officers per incident
-# nOff <- sample(2:nOfficers, nIncidents, replace = TRUE)
-# # randomly assign officers to incidents
-# d <- data.frame(id=rep(1:nIncidents, nOff),
-#                 idOff=unlist(sapply(nOff, function(x) sample(1:nOfficers, x))))
-#
-# # translate lambda & s to probabilities of using type of force
-# p <- outer(lambda_true, s) |> exp()
-# p <- p/rowSums(p)
-# # simulate force used
-# d$p <- p[d$idOff,]
-# d$y <- apply(d$p, 1, function(x) sample(1:4, 1, prob=x))
-
-
-# 3+3 disconnected, 250 incidents per officers --------------------------------
+# 3+3 disconnected --------------------------------
 set.seed(20010618)
 nIncidents <- 2000
 nOff <- sample(2:3, nIncidents, replace = TRUE)
@@ -95,17 +72,21 @@ offSummary <- officer_summary(fit, pct_tail = flag_officer_tail_pct)
 offSummary
 
 # focus on officers with strong posterior evidence of being in the
-# upper or lower tail of their peer group
-outliers <- outlier_report(offSummary, prob_outlier = 0.1)
+#    upper or lower tail of their peer group
+#    90% chance of being in top 5% of peers
+outliers <- outlier_report(offSummary, prob_outlier = 0.9)
 outliers
 
-# optional table display for reports
+
+# optional xtable display for reports
 xtable(outliers,
        digits = c(0, 0, 0, 0,
                   rep(0, fit$data$nForceTypes),
                   2, 2, 2, 2, 2)) |>
   print(include.rownames = FALSE)
 
+
+# optional kable display
 if (requireNamespace("knitr", quietly = TRUE) &&
     requireNamespace("kableExtra", quietly = TRUE)) {
 
