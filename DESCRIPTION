@@ -11,7 +11,11 @@ RoxygenNote: 7.3.3
 Depends: R (>= 4.1.0)
 Suggests: 
     arrangements,
+    future,
+    future.apply,
+    kableExtra,
     knitr,
+    progressr,
     rmarkdown,
     testthat (>= 3.0.0),
     xtable
