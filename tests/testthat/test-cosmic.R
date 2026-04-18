@@ -154,7 +154,7 @@ test_that("officer_summary works with supplied draws", {
 
 test_that("outlier_report filters and orders an officer summary", {
 
-  off_summary <- data.frame(
+  off_summary <- structure(data.frame(
     idOff = c(1, 2, 3),
     nPeers = c(4, 4, 4),
     nInc = c(10, 9, 8),
@@ -166,12 +166,142 @@ test_that("outlier_report filters and orders an officer summary", {
     lamMean = c(1.2, 0.1, -1.3),
     lam025 = c(0.9, -0.2, -1.8),
     lam975 = c(1.5, 0.4, -0.8)
-  )
+  ), class = c("cosmic_officer_summary", "data.frame"))
 
   report <- outlier_report(off_summary, prob_outlier = 0.8)
 
   expect_s3_class(report, "cosmic_outlier_report")
   expect_equal(report$idOff, c(1, 3))
+})
+
+
+test_that("outlier_report returns all officers when prob_outlier is zero", {
+
+  off_summary <- structure(data.frame(
+    idOff = c(1, 2, 3),
+    nPeers = c(4, 4, 4),
+    nInc = c(10, 9, 8),
+    force1 = c(1, 2, 3),
+    force2 = c(4, 5, 6),
+    force3 = c(7, 8, 9),
+    pRankToppct = c(0.95, 0.20, 0.10),
+    pRankBotpct = c(0.01, 0.25, 0.91),
+    lamMean = c(1.2, 0.1, -1.3),
+    lam025 = c(0.9, -0.2, -1.8),
+    lam975 = c(1.5, 0.4, -0.8)
+  ), class = c("cosmic_officer_summary", "data.frame"))
+
+  report <- outlier_report(off_summary, prob_outlier = 0)
+
+  expect_s3_class(report, "cosmic_outlier_report")
+  expect_equal(report$idOff, c(1, 2, 3))
+  expect_equal(attr(report, "prob_outlier"), 0)
+})
+
+
+test_that("outlier_report rejects fitted models directly", {
+
+  fit <- structure(list(), class = "cosmic_fit")
+
+  expect_error(
+    outlier_report(fit),
+    "Call officer_summary\\(\\) first"
+  )
+})
+
+
+test_that("diagnostics flag poor convergence and HMC issues", {
+
+  summary_matrix <- cbind(
+    n_eff = c(50, 410, 900),
+    Rhat = c(1.005, 1.02, NA)
+  )
+
+  rownames(summary_matrix) <- c("lambda[1]", "lambda[2]", "lp__")
+
+  diag <- .build_cosmic_diagnostics(
+    summary_matrix = summary_matrix,
+    n_chains = 4L,
+    sampler_diagnostics = list(
+      divergences = 2L,
+      treedepth_saturated = 1L,
+      max_treedepth = 10L,
+      low_ebfmi_chains = 2L,
+      ebfmi = c(0.35, 0.15)
+    ),
+    rhat_threshold = 1.01,
+    ess_threshold_per_chain = 100,
+    ebfmi_threshold = 0.2
+  )
+
+  expect_s3_class(diag, "cosmic_diagnostics")
+  expect_false(diag$ok)
+  expect_equal(diag$metrics$n_bad_rhat, 1)
+  expect_equal(diag$metrics$n_low_n_eff, 1)
+  expect_equal(diag$metrics$divergences, 2)
+  expect_equal(diag$metrics$treedepth_saturated, 1)
+  expect_equal(diag$metrics$low_ebfmi_chains, 2L)
+  expect_match(diag$warnings[1], "R-hat > 1.01")
+  expect_match(diag$warnings[2], "n_eff < 400")
+  expect_match(diag$warnings[3], "divergent transition")
+  expect_match(diag$warnings[4], "maximum treedepth")
+  expect_match(diag$warnings[5], "Low E-BFMI")
+  expect_equal(diag$parameters$high_rhat, "lambda[2]")
+  expect_equal(diag$parameters$low_n_eff, "lambda[1]")
+})
+
+
+test_that("diagnostic printer reports clean fits", {
+
+  summary_matrix <- cbind(
+    n_eff = c(800, 900),
+    Rhat = c(1.001, 1.003)
+  )
+
+  rownames(summary_matrix) <- c("lambda[1]", "lambda[2]")
+
+  diag <- .build_cosmic_diagnostics(
+    summary_matrix = summary_matrix,
+    n_chains = 4L,
+    sampler_diagnostics = list(
+      divergences = 0L,
+      treedepth_saturated = 0L,
+      max_treedepth = 10L,
+      low_ebfmi_chains = integer(),
+      ebfmi = c(0.5, 0.7)
+    ),
+    rhat_threshold = 1.01,
+    ess_threshold_per_chain = 100,
+    ebfmi_threshold = 0.2
+  )
+
+  output <- capture.output(print(diag))
+
+  expect_true(diag$ok)
+  expect_match(output[1], "COSMIC fit diagnostics: OK")
+  expect_match(output[length(output)], "No major diagnostic problems detected")
+})
+
+
+test_that("stan summary extractor handles matrix and list outputs", {
+
+  summary_matrix <- cbind(
+    n_eff = c(100, 200),
+    Rhat = c(1, 1.01)
+  )
+
+  summary.fake_stanfit <- function(object, ...) object
+  summary.fake_stanfit_list <- function(object, ...) object
+
+  expect_equal(
+    .stan_summary_matrix(structure(summary_matrix, class = "fake_stanfit")),
+    summary_matrix
+  )
+
+  expect_equal(
+    .stan_summary_matrix(structure(list(summary = summary_matrix), class = "fake_stanfit_list")),
+    summary_matrix
+  )
 })
 
 
