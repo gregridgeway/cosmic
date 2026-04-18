@@ -19,8 +19,8 @@
 \value{
 \code{print.cosmic_fit()} returns \code{x} invisibly.
 
-\code{summary.cosmic_fit()} returns the summary matrix produced by
-\code{summary(object$fit)$summary}.
+\code{summary.cosmic_fit()} returns the summary matrix produced by the
+underlying \code{stanfit} summary method.
 }
 \description{
 Methods for inspecting fitted objects of class \code{"cosmic_fit"}.

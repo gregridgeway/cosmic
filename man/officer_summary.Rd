@@ -32,9 +32,25 @@ against the mean of peers, and counts by force category.
 Officers are treated as peers when the posterior variance of
 \eqn{\lambda_i - \lambda_j} is smaller than
 \code{pct_threshold * 2 * priorSD_lambda^2}.
+
+When the \pkg{future.apply} package is installed, computations are
+distributed using the active \pkg{future} plan. If \pkg{progressr} is also
+installed, progress updates are emitted while officers are processed.
+
+Parallel workers are not configured by \code{officer_summary()} itself.
+Instead, the function respects the \pkg{future} plan that is already active.
+For example, users can request four background R sessions with
+\code{future::plan(future::multisession, workers = 4)} before calling
+\code{officer_summary()}. If no multi-worker plan is active, computation
+falls back to sequential evaluation. To see progress updates in an
+interactive session, call \code{progressr::handlers("cli")} before running
+\code{officer_summary()}.
 }
 \examples{
 \dontrun{
+future::plan(future::multisession, workers = 4)
+progressr::handlers("cli")
+
 fit <- cosmic(d, id, idOff, y)
 off_summary <- officer_summary(fit)
 outlier_report(off_summary)

@@ -4,17 +4,14 @@
 \alias{outlier_report}
 \title{Create an outlier-focused report table}
 \usage{
-outlier_report(x, prob_outlier = 0.8, ...)
+outlier_report(x, prob_outlier = 0.8)
 }
 \arguments{
-\item{x}{A \code{"cosmic_officer_summary"} object, data frame returned by
-\code{\link{officer_summary}}, or a fitted \code{"cosmic_fit"} object.}
+\item{x}{A \code{"cosmic_officer_summary"} object returned by
+\code{\link{officer_summary}}.}
 
 \item{prob_outlier}{Probability cutoff used to flag an outlier. Default is
-\code{0.8}.}
-
-\item{...}{Additional arguments passed to \code{\link{officer_summary}} when
-\code{x} is a fitted \code{"cosmic_fit"} object.}
+\code{0.8}. Set to \code{0} to return all officers.}
 }
 \value{
 A filtered data frame with class
@@ -29,7 +26,8 @@ The returned data frame is designed to be passed directly to
 \examples{
 \dontrun{
 fit <- cosmic(d, id, idOff, y)
-outliers <- outlier_report(fit)
+off_summary <- officer_summary(fit)
+outliers <- outlier_report(off_summary)
 knitr::kable(outliers)
 }
 
