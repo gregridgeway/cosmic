@@ -62,6 +62,8 @@ test_that("prep_cosmic_data runs on simple input", {
   expect_true(is.list(out))
   expect_equal(out$nOff, 2)
   expect_equal(out$nIncidents, 2)
+  expect_equal(out$officer_lookup,
+               data.frame(idOff = c(1L, 2L), idOffOrig = c(1, 2)))
 })
 
 
@@ -118,6 +120,10 @@ test_that("officer_summary works with supplied draws", {
     list(
       data = list(
         idOff = c(1, 2, 1, 2, 3, 3),
+        officer_lookup = data.frame(
+          idOff = c(1L, 2L, 3L),
+          idOffOrig = c("A12", "B07", "C99")
+        ),
         y = c(1, 2, 3, 2, 1, 3),
         nOff = 3L,
         nForceTypes = 3L,
@@ -142,6 +148,8 @@ test_that("officer_summary works with supplied draws", {
 
   expect_s3_class(off_summary, "cosmic_officer_summary")
   expect_equal(nrow(off_summary), 3)
+  expect_equal(off_summary$idOffOrig, c("A12", "B07", "C99"))
+  expect_equal(off_summary$idOff, c(1, 2, 3))
   expect_equal(off_summary$nPeers, c(2, 2, 2))
   expect_equal(off_summary$force1, c(1, 0, 1))
   expect_equal(off_summary$force2, c(0, 2, 0))
@@ -155,6 +163,7 @@ test_that("officer_summary works with supplied draws", {
 test_that("outlier_report filters and orders an officer summary", {
 
   off_summary <- structure(data.frame(
+    idOffOrig = c("A12", "B07", "C99"),
     idOff = c(1, 2, 3),
     nPeers = c(4, 4, 4),
     nInc = c(10, 9, 8),
@@ -171,6 +180,7 @@ test_that("outlier_report filters and orders an officer summary", {
   report <- outlier_report(off_summary, prob_outlier = 0.8)
 
   expect_s3_class(report, "cosmic_outlier_report")
+  expect_equal(report$idOffOrig, c("A12", "C99"))
   expect_equal(report$idOff, c(1, 3))
 })
 
@@ -178,6 +188,7 @@ test_that("outlier_report filters and orders an officer summary", {
 test_that("outlier_report returns all officers when prob_outlier is zero", {
 
   off_summary <- structure(data.frame(
+    idOffOrig = c("A12", "B07", "C99"),
     idOff = c(1, 2, 3),
     nPeers = c(4, 4, 4),
     nInc = c(10, 9, 8),
@@ -194,6 +205,7 @@ test_that("outlier_report returns all officers when prob_outlier is zero", {
   report <- outlier_report(off_summary, prob_outlier = 0)
 
   expect_s3_class(report, "cosmic_outlier_report")
+  expect_equal(report$idOffOrig, c("A12", "B07", "C99"))
   expect_equal(report$idOff, c(1, 2, 3))
   expect_equal(attr(report, "prob_outlier"), 0)
 })
