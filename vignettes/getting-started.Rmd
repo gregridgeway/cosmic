@@ -23,6 +23,7 @@ library(cosmic)
 library(knitr)
 library(kableExtra)
 library(ggplot2)
+library(MASS)
 ```
 
 This vignette uses data from the Seattle Police Department, the same data featured in [Ridgeway (2026)](https://www.tandfonline.com/doi/full/10.1080/01621459.2025.2597050). The dataset is included with `cosmic`. Running the Stan model fit can take several hours, so the vignette renders from a small precomputed object that stores diagnostics, officer summaries, and selected posterior draws from the Seattle fit.
@@ -158,7 +159,7 @@ The value of $\lambda$ can be interpreted as a relative risk of using a more ser
 $$
 \frac{P(Y=y_2|\lambda=\lambda_0)}{P(Y=y_1|\lambda=\lambda_0)} = \frac{P(Y=y_2|\lambda=0)}{P(Y=y_1|\lambda=0)} e^{\left(s_{y_2}-s_{y_1}\right)\lambda_0}
 $$
-Since $s_0=0$ and $s_1=1$, one way of expressing $\lambda is
+Since $s_0=0$ and $s_1=1$, one way of expressing $\lambda$ is
 $$
 e^{\lambda_0} = \frac{\frac{P(Y=1|\lambda=\lambda_0)}{P(Y=0|\lambda=\lambda_0)}}
 {\frac{P(Y=1|\lambda=0)}{P(Y=0|\lambda=0)}}
