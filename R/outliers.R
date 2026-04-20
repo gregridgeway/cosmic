@@ -2,8 +2,9 @@
 #'
 #' Computes posterior summary measures for each officer in a fitted COSMIC
 #' model. The returned data frame includes the size of each officer's peer
-#' group, tail-rank probabilities within that group, posterior contrasts
-#' against the mean of peers, and counts by force category.
+#' group, both the original and sequential officer IDs, tail-rank
+#' probabilities within that group, posterior contrasts against the mean of
+#' peers, and counts by force category.
 #'
 #' Officers are treated as peers when the posterior variance of
 #' \eqn{\lambda_i - \lambda_j} is smaller than
@@ -31,7 +32,9 @@
 #'   rank probabilities. Default is \code{0.05}, tracking the probability of
 #'   being in the top or bottom 5 percent.
 #'
-#' @return A data frame with one row per officer. The returned object has class
+#' @return A data frame with one row per officer. When the fitted model
+#'   includes an \code{officer_lookup} table, the summary includes both
+#'   \code{idOffOrig} and \code{idOff}. The returned object has class
 #'   \code{c("cosmic_officer_summary", "data.frame")}.
 #'
 #' @examples
@@ -104,6 +107,7 @@ officer_summary <- function(object,
   var_threshold <- pct_threshold * 2 * object$data$rPriorSD_lambda^2
   id_off <- object$data$idOff
   y <- object$data$y
+  officer_lookup <- .officer_lookup(object$data, n_off)
 
   n_inc <- tabulate(id_off, nbins = n_off)
   force_count_matrix <- vapply(
@@ -137,10 +141,17 @@ officer_summary <- function(object,
   out <- do.call(rbind, rows)
   rownames(out) <- NULL
 
+  if (!is.null(officer_lookup)) {
+    out$idOffOrig <- officer_lookup$idOffOrig[match(out$idOff, officer_lookup$idOff)]
+    out <- out[, c("idOffOrig", "idOff", setdiff(names(out), c("idOffOrig", "idOff"))),
+               drop = FALSE]
+  }
+
   class(out) <- c("cosmic_officer_summary", "data.frame")
   attr(out, "pct_threshold") <- pct_threshold
   attr(out, "pct_tail") <- pct_tail
   attr(out, "var_threshold") <- var_threshold
+  attr(out, "officer_lookup") <- officer_lookup
 
   return(out)
 }
@@ -148,6 +159,33 @@ officer_summary <- function(object,
 .officer_summary_rank <- function(x)
 {
   1L + sum(x[1] > x[-1])
+}
+
+.officer_lookup <- function(stan_data, n_off)
+{
+  lookup <- stan_data$officer_lookup
+
+  if (is.null(lookup)) {
+    return(NULL)
+  }
+
+  required_cols <- c("idOff", "idOffOrig")
+  missing_cols <- setdiff(required_cols, names(lookup))
+  if (length(missing_cols) > 0L) {
+    stop("object$data$officer_lookup is missing required columns: ",
+         paste(missing_cols, collapse = ", "),
+         call. = FALSE)
+  }
+
+  lookup <- lookup[order(lookup$idOff), required_cols, drop = FALSE]
+  rownames(lookup) <- NULL
+
+  if (!identical(as.integer(lookup$idOff), seq_len(n_off))) {
+    stop("object$data$officer_lookup must contain one row per officer",
+         call. = FALSE)
+  }
+
+  lookup
 }
 
 .officer_summary_one <- function(i_id, context, p = NULL)
@@ -250,7 +288,8 @@ officer_summary <- function(object,
 #'   \code{0.8}. Set to \code{0} to return all officers.
 #'
 #' @return A filtered data frame with class
-#'   \code{c("cosmic_outlier_report", "data.frame")}.
+#'   \code{c("cosmic_outlier_report", "data.frame")}. When available, the
+#'   report includes both \code{idOffOrig} and \code{idOff}.
 #'
 #' @examples
 #' \dontrun{
@@ -290,7 +329,8 @@ outlier_report <- function(x, prob_outlier = 0.8) {
   }
 
   force_cols <- grep("^force[0-9]+$", names(x), value = TRUE)
-  keep_cols <- c("idOff", "nPeers", "nInc", force_cols,
+  id_cols <- intersect(c("idOffOrig", "idOff"), names(x))
+  keep_cols <- c(id_cols, "nPeers", "nInc", force_cols,
                  "pRankToppct", "pRankBotpct",
                  "lamMean", "lam025", "lam975")
 
@@ -310,6 +350,7 @@ outlier_report <- function(x, prob_outlier = 0.8) {
   rownames(out) <- NULL
   class(out) <- c("cosmic_outlier_report", "data.frame")
   attr(out, "prob_outlier") <- prob_outlier
+  attr(out, "officer_lookup") <- attr(x, "officer_lookup")
 
   return(out)
 }
