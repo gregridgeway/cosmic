@@ -1,83 +1,282 @@
 ---
-title: "getting-started"
+title: "Introduction to cosmic"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{getting-started}
-  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteIndexEntry{Introduction to cosmic}
   %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  chunk_output_type: console
 ---
 
-```{r, include = FALSE}
+```{r setup, include=FALSE}
+vignette_dir <- dirname(knitr::current_input(dir = TRUE))
+fig_dir <- tempdir()
+
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  fig.path = file.path(fig_dir, "getting-started-")
+)
+
+library(cosmic)
+library(knitr)
+library(kableExtra)
+library(ggplot2)
+```
+
+This vignette uses data from the Seattle Police Department, the same data featured in [Ridgeway (2026)](https://www.tandfonline.com/doi/full/10.1080/01621459.2025.2597050). The dataset is included with `cosmic`. Running the Stan model fit can take several hours, so the vignette renders from a small precomputed object that stores diagnostics, officer summaries, and selected posterior draws from the Seattle fit.
+
+## Load the Seattle example
+
+The demo data are distributed as a single data frame `d` in the package `extdata` directory.
+
+```{r load-seattle}
+path <- system.file("extdata", "dataSPD.RData", package = "cosmic")
+if (!nzchar(path)) {
+  path_candidates <- c(
+    file.path(vignette_dir, "..", "inst", "extdata", "dataSPD.RData"),
+    file.path("..", "inst", "extdata", "dataSPD.RData"),
+    file.path("inst", "extdata", "dataSPD.RData")
+  )
+  path <- path_candidates[file.exists(path_candidates)][1]
+}
+
+if (is.na(path) || !nzchar(path)) {
+  stop("Could not find 'dataSPD.RData' in the installed package or source tree.")
+}
+
+load(path)
+```
+
+Each row is an officer-incident record. `id` identifies the incident, `idOff` identifies the officer, and `y` is the officer's highest observed force level on an ordinal scale from 1 to 4. Incidents with no within-incident variation in force have already been removed, since they do not contribute information to the conditional likelihood. The resulting dataset is already in the format expected by `cosmic()`: one row per officer within incident, with the outcome coded as consecutive integers starting at 1.
+
+```{r seattle-overview}
+seattle_overview <- data.frame(
+  quantity = c("Officer-incident rows", "Incidents", "Officers", "Force levels"),
+  value = c(nrow(d),
+            length(unique(d$id)),
+            length(unique(d$idOff)),
+            length(unique(d$y))))
+seattle_overview
+```
+
+```{r force-distribution}
+force_distribution <- data.frame(
+  force_level = as.integer(names(table(d$y))),
+  count = as.integer(table(d$y)))
+force_distribution
+```
+
+```{r incident-size}
+officers_per_incident <- table(table(d$id))
+incident_size_distribution <- data.frame(
+  officers_in_incident = as.integer(names(officers_per_incident)),
+  number_of_incidents = as.integer(officers_per_incident)
+)
+incident_size_distribution
+```
+
+## Fit the COSMIC model
+
+To fit the conditional ordinal stereotype model, use the `cosmic()` function. This compiles the Stan program, prepares the Seattle data, and draws samples from the posterior distribution for the officer effects $\boldsymbol\lambda$ and the ordinal score parameters $\mathbf{s}$. The conditional likelihood calculation is parallelized across incidents, so `threads` controls within-chain parallelism. In this example it is usually better to let chains run sequentially (`cores = 1`) and use the available CPU budget inside each chain.
+
+```{r fit-seattle, eval = FALSE}
+fit <- cosmic(d,
+              incidentID = id,
+              officerID  = idOff,
+              y          = y,
+              iter       = 10000,
+              chains     = 4,
+              cores      = 1,
+              threads    = 8)
+```
+
+```{r loadPrecompute, echo=FALSE, results='hide'}
+
+if(FALSE)
+{
+  SPDdiag <- diagnose(fit)
+  flag_officer_tail_pct <- 0.05
+  off_summary <- officer_summary(fit,
+                                 pct_threshold = 0.25,
+                                 pct_tail = flag_officer_tail_pct)
+  SPDoff_summary <- off_summary
+  SPDdraws <- posterior(fit, pars="sDelta")
+  save(SPDdiag, SPDoff_summary, SPDdraws, file="vignettes/SPDprecompute.RData")
+}
+
+# load pre-computed results
+fit_path_candidates <- c(file.path(vignette_dir, "SPDprecompute.RData"),
+                         "SPDprecompute.RData",
+                         file.path("vignettes", "SPDprecompute.RData"))
+fit_path <- fit_path_candidates[file.exists(fit_path_candidates)][1]
+
+if (is.na(fit_path)) {
+  stop("Could not find 'SPDprecompute.RData' next to the vignette source.")
+}
+
+load(fit_path)
+```
+
+## Check sampler diagnostics
+
+After fitting, start by reviewing convergence and Hamiltonian Monte Carlo diagnostics. The most important questions are whether the chains mixed well, whether effective sample sizes are adequate, and whether the Hamiltonian Monte Carlo sampler encountered pathologies such as divergences.
+
+```{r diagnose-fit, eval = FALSE}
+diagnose(fit)
+```
+```{r, echo = FALSE}
+# taken from pre-computed results
+print(SPDdiag)
+```
+
+
+## Summarize officers relative to their peers
+
+The next step is to summarize each officer relative to their peer group. The officer-specific parameters $\lambda_i$ are not individually identified; only contrasts between officers are meaningful. For that reason, `officer_summary()` reports each officer relative to a set of peers for whom the data are informative enough to estimate differences in $\lambda$ with useful precision.
+
+The prior standard deviation on the $\lambda_i$ is set with `priorSD_lambda` when calling `cosmic()`, with the default equal to 2. The prior variance for the difference of $\lambda_i$ and $\lambda_j$ is `2*priorSD_lambda^2`. Officers $i$ and $j$ will be considered peers if their posterior variance, $\mathrm{Var}(\lambda_i-\lambda_j\mid\mathrm{data}) < \mathtt{pct\_threshold} \times 2 \times \mathtt{priorSD\_lambda}^2$. `pct_threshold` is the percent reduction in variance in the difference between two officers' values of $\lambda$ needed in order for them to be considered peers, with the default set to 0.25. `officer_summary()` will also compute the probability that the officer is in the top or bottom `flag_officer_tail_pct` of the distribution of $\lambda$ in their peer group, with the default set to 5\%.
+
+```{r officer-summary, eval = FALSE}
+flag_officer_tail_pct <- 0.05
+off_summary <- officer_summary(fit,
+                               pct_threshold = 0.25,
+                               pct_tail = flag_officer_tail_pct)
+
+head(off_summary)
+```
+```{r, echo = FALSE}
+# taken from pre-computed results
+flag_officer_tail_pct <- 0.05
+head(SPDoff_summary)
+```
+
+The resulting table includes the number of peers for each officer, incident counts, force-category counts, and posterior summaries of each officer's latent propensity relative to peers. `lamMean` reports the posterior mean for the difference between $\lambda_i$ and the mean of the $\lambda$s in officer $i$'s peer group. `lam025` and `lam975` give the endpoints of the 95\% credible interval. Some officers have no reported peers because their force counts are too sparse for precise estimation of their $\lambda$, or because they are weakly connected to the part of the officer network where pairwise contrasts can be estimated well.
+
+The value of $\lambda$ can be interpreted as a relative risk of using a more serious force level.
+$$
+\frac{P(Y=y_2|\lambda=\lambda_0)}{P(Y=y_1|\lambda=\lambda_0)} = \frac{P(Y=y_2|\lambda=0)}{P(Y=y_1|\lambda=0)} e^{\left(s_{y_2}-s_{y_1}\right)\lambda_0}
+$$
+Since $s_0=0$ and $s_1=1$, one way of expressing $\lambda is
+$$
+e^{\lambda_0} = \frac{\frac{P(Y=1|\lambda=\lambda_0)}{P(Y=0|\lambda=\lambda_0)}}
+{\frac{P(Y=1|\lambda=0)}{P(Y=0|\lambda=0)}}
+$$
+The relative risk ratio of using Level 1 versus Level 0 force for an officer with $\lambda=\lambda_0$ compared to the average of their peer group.
+
+## Flag officers in the tails of the peer distribution
+
+To focus attention on officers with strong posterior evidence of being unusually high or low relative to peers, filter the officer summary into an outlier report. `outlier_report()` keeps only those officers with posterior probability exceeding `prob_outlier` of being in either the top or bottom `pct_tail` of the peer-group distribution of $\lambda$.
+
+```{r outlier-report, eval = FALSE}
+outliers <- outlier_report(off_summary, prob_outlier = 0.9)
+head(outliers, 10)
+```
+```{r, echo = FALSE}
+# taken from pre-computed results
+outliers <- outlier_report(SPDoff_summary, prob_outlier = 0.9)
+head(outliers, 10)
+```
+
+
+```{r}
+  outliers_display <- outliers
+  prob_cols <- names(outliers_display) %in% c("pRankToppct", "pRankBotpct")
+  tail_pct_label <- formatC(100 * flag_officer_tail_pct,
+                            format = "fg", digits = 3)
+  names(outliers_display)[names(outliers_display) == "pRankToppct"] <-
+    paste0("Prob. top ", tail_pct_label, "%")
+  names(outliers_display)[names(outliers_display) == "pRankBotpct"] <-
+    paste0("Prob. bottom ", tail_pct_label, "%")
+  outliers_display[prob_cols] <-
+    lapply(outliers_display[prob_cols],
+           function(x) sprintf("%.2f", x))
+
+  digits <- rep(0, ncol(outliers_display))
+  digits[seq.int(length(digits)-4,length(digits))] <- 2L
+
+  knitr::kable(
+    outliers_display,
+    format = "html",
+    digits = digits,
+    caption = "Officers with strong posterior evidence of being in the tails of the peer distribution",
+    align = rep("r", ncol(outliers_display))) |>
+    kableExtra::kable_styling(
+      bootstrap_options = c("striped", "hover", "condensed", "responsive"),
+      full_width = FALSE,
+      position = "center") |>
+    kableExtra::row_spec(0, bold = TRUE, color = "white",
+                         background = "#2C3E50") |>
+    kableExtra::column_spec(1, bold = TRUE) |>
+    kableExtra::scroll_box(width = "100%", height = "320px")
+```
+
+
+## Optional posterior extraction
+
+If you need custom summaries or plots, extract posterior draws directly. In this model, the score parameters are anchored so that the baseline level is 0 and the next score is 1, while Stan samples the positive increments in `sDelta`. Under the notation used below, the remaining free score parameters are reconstructed as
+
+\[
+s_2 = 1 + \mathtt{sDelta}_1, \qquad
+s_3 = 1 + \mathtt{sDelta}_1 + \mathtt{sDelta}_2.
+\]
+
+```{r posterior-draws, eval = FALSE}
+sDelta_draws <- posterior(fit, pars = "sDelta")$sDelta
+```
+```{r posterior-draws-precompute, echo = FALSE}
+sDelta_draws <- SPDdraws$sDelta
+```
+
+```{r}
+score_summary <- data.frame(
+  parameter = c("s[2]", "s[3]"),
+  mean = c(
+    mean(1 + sDelta_draws[, 1]),
+    mean(1 + sDelta_draws[, 1] + sDelta_draws[, 2])
+  ),
+  lower_95 = c(
+    unname(stats::quantile(1 + sDelta_draws[, 1], probs = 0.025)),
+    unname(stats::quantile(1 + sDelta_draws[, 1] + sDelta_draws[, 2],
+                           probs = 0.025))
+  ),
+  upper_95 = c(
+    unname(stats::quantile(1 + sDelta_draws[, 1], probs = 0.975)),
+    unname(stats::quantile(1 + sDelta_draws[, 1] + sDelta_draws[, 2],
+                           probs = 0.975))
+  )
 )
 ```
 
-```{r setup}
-library(cosmic)
+The table below summarizes the posterior distribution of the non-fixed score parameters. The expression $\frac{1}{s_{y_2}-s_{y_1}}\log 2$ gives the amount that $\lambda$ must increase to double the relative risk of force level $y_2$ over $y_1$.
+
+```{r posterior-draw-summary, echo = FALSE}
+knitr::kable(
+  score_summary,
+  digits = 3,
+  caption = "Posterior summaries for the estimated score parameters"
+)
 ```
 
-This vignette illustrates the basic COSMIC workflow on a small simulated
-dataset. The modeling code is shown but not executed during vignette builds,
-since fitting the Stan model requires a working C++ toolchain and can be slow.
+The next plots show the joint and marginal posterior distributions for these score parameters.
 
-```{r, eval = FALSE}
-
-################################################################################
-# simulate with 3 officers
-################################################################################
-set.seed(20010618)
-nIncidents <- 50
-# number of officers per incident
-nOff <- sample(2:3, nIncidents, replace = TRUE)
-# randomly assign officers to incidents
-d <- data.frame(id=rep(1:nIncidents, nOff),
-                idOff=sapply(nOff, function(x) sample(1:3, x)) |> unlist())
-# simulate with these parameters
-lambda <- -c(0.5, 1, 2)
-s <- c(0, 1, 1.5, 2)
-# translate lambda & s to probabilities of using type of force
-p <- t(exp(s %*% t(lambda)))
-p <- p/rowSums(p)
-# simulate force used
-d$p <- p[d$idOff,]
-d$y <- apply(d$p, 1, function(x) sample(1:4, 1, prob=x))
-
-# check empirical probabilities resemble p
-p
-aggregate(cbind(y==1,y==2,y==3,y==4)~idOff, data=d, mean)
-
-
-COSMOff3 <- cosmic(d, 
-                   incidentID = id,
-                   officerID  = idOff,
-                   y          = y)
+```{r posterior-joint-plot, fig.width=10, fig.height=6.5, out.width='100%', fig.align='center'}
+ggplot(data.frame(x = sDelta_draws[,1], 
+                  y = sDelta_draws[,2]),
+       aes(x=x, y=y)) +
+  geom_point(alpha = 0.05, size = 0.5) +
+  geom_density_2d(color = "red") +
+  labs(x = expression(s[2] - 1),
+       y = expression(s[3] - s[2])) +
+  theme_minimal()
 ```
-
-
-```{r, eval = FALSE}
-a <- posterior(COSMOff3, pars=c("lambda","sDelta"))
-lambda - lambda[1]
-# a$lambda: iterations x officers matrix
-apply(a$lambda - a$lambda[,1], 2, quantile, probs=c(0.025,0.5,0.975))
+```{r posterior-s2-hist, fig.width=10, fig.height=5.5, out.width='100%', fig.align='center'}
+hist(1+sDelta_draws[,1], xlab=expression(s[2]), main="")
+abline(v=1+mean(sDelta_draws[,1]))
 ```
-
-```{r, eval = FALSE}
-plot(a$lambda[,2]-a$lambda[,1], a$lambda[,3]-a$lambda[,1])
-```
-
-```{r, eval = FALSE}
-s
-c(0,1,colMeans(a$sDelta)) |> cumsum()
-```
-
-```{r, eval = FALSE}
-hist(a$lambda[,2]-a$lambda[,1])
-abline(v=lambda[2]-lambda[1])
-```
-
-```{r, eval = FALSE}
-hist(a$lambda[,3]-a$lambda[,1])
-abline(v=lambda[3]-lambda[1])
+```{r posterior-s3-hist, fig.width=10, fig.height=5.5, out.width='100%', fig.align='center'}
+hist(1+sDelta_draws[,1]+sDelta_draws[,2], 
+     xlab=expression(s[3]), main="")
+abline(v=1+mean(sDelta_draws[,1])+mean(sDelta_draws[,2]))
 ```
