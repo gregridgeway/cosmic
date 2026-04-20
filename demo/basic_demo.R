@@ -52,9 +52,9 @@ message(
   "Loading the precomputed demo fit from 'basic_demo_cosmic_fit.RData' ",
   "instead of running `cosmic()`, which takes substantially longer."
 )
-fit_path <- system.file("demo", "basic_demo_cosmic_fit.RData", package = "cosmic")
+fit_path <- system.file("extdata", "basic_demo_cosmic_fit.RData", package = "cosmic")
 if (!nzchar(fit_path)) {
-  fit_path <- file.path("demo", "basic_demo_cosmic_fit.RData")
+  fit_path <- file.path("inst", "extdata", "basic_demo_cosmic_fit.RData")
 }
 load(fit_path)
 
