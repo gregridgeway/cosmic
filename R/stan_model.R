@@ -19,5 +19,5 @@
     stop("Bundled COSMIC Stan model not found in package.", call. = FALSE)
   }
 
-  rstan::stan_model(file = path)
+  rstan::stan_model(file = path, model_name="CondOrdStereoModel")
 }
