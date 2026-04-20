@@ -26,6 +26,10 @@ prep_cosmic_data <- function(data, incidentID, officerID, y)
     ) |>
     dplyr::arrange(id, idOff)
 
+  officer_lookup <- d |>
+    dplyr::distinct(idOff, idOffOrig) |>
+    dplyr::arrange(idOff)
+
   # validation (your existing logic)
   if (!is.numeric(d$y)) stop("y must be numeric")
   if (any(is.na(d$y))) stop("y has NA")
@@ -44,6 +48,7 @@ prep_cosmic_data <- function(data, incidentID, officerID, y)
     y           = as.integer(d$y),
     id          = as.integer(d$id),
     idOff       = as.integer(d$idOff),
+    officer_lookup = officer_lookup,
     startIndex  = as.integer(which(!duplicated(d$id))),
     nMaxOffs    = max(table(d$id)),
     nRows       = nrow(d),
