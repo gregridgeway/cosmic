@@ -43,7 +43,9 @@
 #' @return
 #' An object of class \code{"cosmic_fit"} containing:
 #' \item{fit}{The fitted \code{stanfit} object.}
-#' \item{data}{The processed data passed to Stan.}
+#' \item{data}{The processed data passed to Stan, including an
+#'   \code{officer_lookup} table that maps sequential \code{idOff} values back
+#'   to the original \code{officerID} values supplied by the user.}
 #'
 #' @examples
 #' \dontrun{
@@ -112,6 +114,5 @@ cosmic <- function(data, incidentID, officerID, y,
     class = "cosmic_fit"
   )
 }
-
 
 
