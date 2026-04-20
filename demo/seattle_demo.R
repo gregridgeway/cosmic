@@ -4,7 +4,10 @@ library(xtable)
 
 
 # load Seattle data --------------------------------
-path <- system.file("demo", "dataSPD.RData", package = "cosmic")
+path <- system.file("extdata", "dataSPD.RData", package = "cosmic")
+if (!nzchar(path)) {
+  path <- file.path("inst", "extdata", "dataSPD.RData")
+}
 load(path)
 
 
@@ -12,26 +15,18 @@ load(path)
 # Fit model
 # -----------------------
 # Can take several hours (~4 hours)
-# fit <- cosmic(
-#   d,
-#   incidentID = id,
-#   officerID  = idOff,
-#   y          = y,
-#   iter       = 10000,
-#   chains     = 4,
-#   cores      = 1,
-#   threads    = 8)
-# save(fit, file = "SPD_fit.RData")
+fit <- cosmic(
+  d,
+  incidentID = id,
+  officerID  = idOff,
+  y          = y,
+  iter       = 10000,
+  chains     = 4,
+  cores      = 1,
+  threads    = 8)
+# large object, ~400Mb
+save(fit, file = "SPD_fit.RData")
 
-message(
-  "Loading the precomputed demo fit from 'SPD_fit.RData' ",
-  "instead of running `cosmic()`, which takes substantially longer."
-)
-fit_path <- system.file("demo", "SPD_fit.RData", package = "cosmic")
-if (!nzchar(fit_path)) {
-  fit_path <- file.path("demo", "SPD_fit.RData")
-}
-load(fit_path)
 
 
 # -----------------------
