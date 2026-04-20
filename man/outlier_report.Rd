@@ -15,7 +15,8 @@ outlier_report(x, prob_outlier = 0.8)
 }
 \value{
 A filtered data frame with class
-\code{c("cosmic_outlier_report", "data.frame")}.
+\code{c("cosmic_outlier_report", "data.frame")}. When available, the
+report includes both \code{idOffOrig} and \code{idOff}.
 }
 \description{
 Filters and reorders officer summaries to show only officers whose

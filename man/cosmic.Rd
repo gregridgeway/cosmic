@@ -46,7 +46,9 @@ parallelization (e.g., via \code{reduce_sum}), this should be set so that
 \value{
 An object of class \code{"cosmic_fit"} containing:
 \item{fit}{The fitted \code{stanfit} object.}
-\item{data}{The processed data passed to Stan.}
+\item{data}{The processed data passed to Stan, including an
+\code{officer_lookup} table that maps sequential \code{idOff} values back
+to the original \code{officerID} values supplied by the user.}
 }
 \description{
 Fits the Conditional Ordinal Stereotype Model for Identification and Comparison (COSMIC)

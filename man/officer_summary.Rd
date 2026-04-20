@@ -19,14 +19,17 @@ rank probabilities. Default is \code{0.05}, tracking the probability of
 being in the top or bottom 5 percent.}
 }
 \value{
-A data frame with one row per officer. The returned object has class
+A data frame with one row per officer. When the fitted model
+includes an \code{officer_lookup} table, the summary includes both
+\code{idOffOrig} and \code{idOff}. The returned object has class
 \code{c("cosmic_officer_summary", "data.frame")}.
 }
 \description{
 Computes posterior summary measures for each officer in a fitted COSMIC
 model. The returned data frame includes the size of each officer's peer
-group, tail-rank probabilities within that group, posterior contrasts
-against the mean of peers, and counts by force category.
+group, both the original and sequential officer IDs, tail-rank
+probabilities within that group, posterior contrasts against the mean of
+peers, and counts by force category.
 }
 \details{
 Officers are treated as peers when the posterior variance of
