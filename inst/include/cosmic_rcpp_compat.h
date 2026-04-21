@@ -1,7 +1,13 @@
 #ifndef COSMIC_RCPP_COMPAT_H
 #define COSMIC_RCPP_COMPAT_H
 
-#include <Rinternals.h>
+/*
+ * Avoid including Rinternals.h here: its macros (e.g. length, isNull) can
+ * interfere with C++ standard headers and Rcpp when this file is force-included
+ * via compiler flags. A forward declaration is enough for the missing symbol.
+ */
+struct SEXPREC;
+typedef SEXPREC* SEXP;
 
 #ifdef __cplusplus
 extern "C" {
