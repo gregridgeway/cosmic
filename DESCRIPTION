@@ -27,9 +27,20 @@ Imports:
     BH,
     dplyr,
     inline,
-    Rcpp,
+    methods,
+    Rcpp (>= 0.12.0),
     RcppEigen,
-    RcppParallel,
-    rstan,
+    RcppParallel (>= 5.0.1),
+    rstan (>= 2.18.1),
+    rstantools (>= 2.6.0),
     StanHeaders,
     stats
+Biarch: true
+LinkingTo: 
+    BH (>= 1.66.0),
+    Rcpp (>= 0.12.0),
+    RcppEigen (>= 0.3.3.3.0),
+    RcppParallel (>= 5.0.1),
+    rstan (>= 2.18.1),
+    StanHeaders (>= 2.18.0)
+SystemRequirements: GNU make

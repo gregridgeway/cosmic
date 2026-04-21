@@ -1,42 +1,21 @@
-#' Load the COSMIC Stan model
+#' Load the packaged COSMIC Stan model
 #'
-#' Internal helper that locates the bundled Stan model. When a serialized
-#' \code{stanmodel} object is available it is loaded directly, avoiding a fresh
-#' compilation during tests and routine package use. Otherwise the Stan source
-#' file is compiled with \pkg{rstan}. Compilation is cached automatically by
-#' \pkg{rstan} when \code{auto_write = TRUE}.
+#' The Stan model is compiled as part of package installation using the
+#' \pkg{rstantools} scaffolding and exposed at runtime through the generated
+#' \code{stanmodels} list in \file{R/stanmodels.R}. This helper returns the
+#' installed model object for sampling.
 #'
 #' @noRd
 .get_stan_model <- function() {
-  rds_path <- system.file("stan", "cosmic.rds", package = "cosmic")
-  if (rds_path != "" && file.exists(rds_path)) {
-    model <- tryCatch(readRDS(rds_path), error = function(e) NULL)
-    if (.stan_model_is_valid(model)) {
-      return(model)
-    }
+  if (!exists("stanmodels", inherits = TRUE)) {
+    stop("Packaged COSMIC Stan model is not available.", call. = FALSE)
   }
 
-  path <- system.file("stan", "cosmic.stan", package = "cosmic")
+  model <- get("stanmodels", inherits = TRUE)[["cosmic"]]
 
-  if (path == "") {
-    stop("Bundled COSMIC Stan model not found in package.", call. = FALSE)
-  }
-
-  rstan::rstan_options(auto_write = TRUE)
-  rstan::stan_model(file = path, model_name="CondOrdStereoModel")
-}
-
-.stan_model_is_valid <- function(model) {
   if (!inherits(model, "stanmodel")) {
-    return(FALSE)
+    stop("Packaged COSMIC Stan model is not available.", call. = FALSE)
   }
 
-  # Serialized stanmodel objects can carry a compiled DSO that is invalid on a
-  # different platform or R session. Probe the module before handing it to
-  # rstan::sampling(), and fall back to recompiling from the Stan source when
-  # the serialized object cannot be used.
-  isTRUE(tryCatch({
-    model@mk_cppmodule(model)
-    TRUE
-  }, error = function(e) FALSE))
+  model
 }
