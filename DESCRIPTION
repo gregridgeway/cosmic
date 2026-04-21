@@ -26,5 +26,10 @@ VignetteBuilder: knitr
 Imports: 
     BH,
     dplyr,
+    inline,
+    Rcpp,
+    RcppEigen,
+    RcppParallel,
     rstan,
+    StanHeaders,
     stats
