@@ -8,7 +8,7 @@
 #' The likelihood is evaluated using a dynamic programming algorithm for the
 #' Poisson-multinomial normalization term, enabling efficient computation for incidents
 #' involving multiple actors. Posterior inference is performed via Markov chain Monte Carlo
-#' using \pkg{rstan}.
+#' using \pkg{cmdstanr}.
 #'
 #' @param data A data frame containing one row per actor-event observation
 #' @param incidentID A column (unquoted) identifying the event or incident
@@ -42,7 +42,8 @@
 #'
 #' @return
 #' An object of class \code{"cosmic_fit"} containing:
-#' \item{fit}{The fitted \code{stanfit} object.}
+#' \item{fit}{The fitted \code{CmdStanMCMC} object.}
+#' \item{model}{The compiled \code{CmdStanModel} used for sampling.}
 #' \item{data}{The processed data passed to Stan, including an
 #'   \code{officer_lookup} table that maps sequential \code{idOff} values back
 #'   to the original \code{officerID} values supplied by the user.}
@@ -75,18 +76,24 @@ cosmic <- function(data, incidentID, officerID, y,
                    cores   = 1,
                    threads = 8)
 {
-  old_threads <- Sys.getenv("STAN_NUM_THREADS")
+  if (!requireNamespace("cmdstanr", quietly = TRUE)) {
+    stop(
+      paste(
+        "The 'cmdstanr' package is required to fit COSMIC models.",
+        "Install it with install.packages('cmdstanr',",
+        "repos = c('https://stan-dev.r-universe.dev', getOption('repos')))."
+      ),
+      call. = FALSE
+    )
+  }
 
-  on.exit({
-    if (old_threads == "") {
-      Sys.unsetenv("STAN_NUM_THREADS")
-    } else {
-      Sys.setenv(STAN_NUM_THREADS = old_threads)
-    }
-  }, add = TRUE)
-
-  Sys.setenv(STAN_NUM_THREADS = threads)
-  rstan::rstan_options(threads_per_chain = threads)
+  cmdstan_path <- tryCatch(cmdstanr::cmdstan_path(), error = function(e) "")
+  if (!nzchar(cmdstan_path) || !dir.exists(cmdstan_path)) {
+    stop(
+      "CmdStan is not installed. Run cmdstanr::install_cmdstan() before calling cosmic().",
+      call. = FALSE
+    )
+  }
 
   message("Preparing data...")
   stanData <- prep_cosmic_data(data, {{incidentID}}, {{officerID}}, {{y}})
@@ -98,21 +105,36 @@ cosmic <- function(data, incidentID, officerID, y,
   inits <- make_inits(stanData, chains)
 
   message("Loading conditional ordinal stereotype model in Stan...")
-  mod <- .get_stan_model()
+  path <- system.file("stan", "cosmic.stan", package = "cosmic")
+  if (path == "") {
+    stop("Bundled COSMIC Stan model not found in package.", call. = FALSE)
+  }
+
+  mod <- cmdstanr::cmdstan_model(
+    stan_file = path,
+    compile = TRUE,
+    cpp_options = list(stan_threads = TRUE),
+    quiet = TRUE)
 
   message("Sampling...")
-  fit <- rstan::sampling(
-    mod,
-    data   = stanData,
-    init   = inits,
-    iter   = iter,
+  iter_warmup <- max(1L, floor(iter / 2))
+  iter_sampling <- max(1L, iter - iter_warmup)
+  stan_input <- stanData
+  stan_input$officer_lookup <- NULL
+
+  fit <- mod$sample(
+    data = stan_input,
+    init = inits,
     chains = chains,
-    cores  = cores)
+    parallel_chains = max(1L, min(chains, cores)),
+    iter_warmup = iter_warmup,
+    iter_sampling = iter_sampling,
+    threads_per_chain = max(1L, as.integer(threads)),
+    refresh = max(1L, floor(iter / 10))
+  )
 
   structure(
-    list(fit = fit, data = stanData),
+    list(fit = fit, model = mod, data = stanData, backend = "cmdstanr"),
     class = "cosmic_fit"
   )
 }
-
-
