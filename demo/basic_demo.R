@@ -66,7 +66,26 @@ print(fit)
 
 diagnose(fit)
 
+# lambda
+a <- posterior(fit, pars = "lambda")$lambda |>
+  colMeans()
+# Diffs in Officers 1-3 identifiable
+rbind(true = lambda-lambda[1],
+      est  = a-a[1])
+# Diffs in Officers 4-6 identifiable
+rbind(true = lambda-lambda[4],
+      est  = a-a[4])
+
+# s
+s |>
+  rbind(est = 0:1 |>
+          c(posterior(fit, pars = "sDelta")$sDelta |>
+              colMeans()) |>
+          cumsum())
+
+# ----------------------------------------------
 # summarize all officers relative to their peers
+# ----------------------------------------------
 flag_officer_tail_pct <- 0.05
 offSummary <- officer_summary(fit, pct_tail = flag_officer_tail_pct)
 offSummary
@@ -80,7 +99,7 @@ outliers
 
 # optional xtable display for reports
 xtable(outliers,
-       digits = c(0, 0, 0, 0,
+       digits = c(0, 0, 0, 0, 0,
                   rep(0, fit$data$nForceTypes),
                   2, 2, 2, 2, 2)) |>
   print(include.rownames = FALSE)
