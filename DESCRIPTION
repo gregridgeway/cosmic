@@ -1,9 +1,9 @@
 Package: cosmic
-Title: Conditional Ordinal Stereotype Model for Incident-level Comparison
+Title: COSMIC - Conditional Ordinal Stereotype Model for Incident-Level Comparison
 Version: 0.5
 Authors@R: 
     person("Greg", "Ridgeway", , "gridge@upenn.edu", role = c("aut", "cre"))
-Description: Implements the Conditional Ordinal Stereotype Model for Incident-level Comparison (COSMIC), a method for analyzing ordinal outcomes observed across multiple actors within shared events. The model uses a conditional likelihood to remove event-level confounding and estimate actor-specific propensities relative to their peers. Efficient computation is achieved via a dynamic programming algorithm for the Poisson-multinomial normalization term, enabling scalable estimation with Markov chain Monte Carlo. The package provides tools for data preparation, model fitting using Stan, and extraction of posterior summaries for comparative inference. Estimation of police officer propensity to escalate force is the primary motivation for the model.
+Description: Implements the Conditional Ordinal Stereotype Model for Incident-Level Comparison (COSMIC), a method for analyzing ordinal outcomes observed across multiple actors within shared events. The model uses a conditional likelihood to remove event-level confounding and estimate actor-specific propensities relative to their peers. Efficient computation is achieved via a dynamic programming algorithm for the Poisson-multinomial normalization term, enabling scalable estimation with Markov chain Monte Carlo. The package provides tools for data preparation, model fitting using Stan, and extraction of posterior summaries for comparative inference. Estimation of police officer propensity to escalate force is the primary motivation for the model.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -11,6 +11,7 @@ RoxygenNote: 7.3.3
 Depends: R (>= 4.1.0)
 Suggests: 
     arrangements,
+    cmdstanr (>= 0.9.0),
     future,
     future.apply,
     ggplot2,
@@ -21,26 +22,10 @@ Suggests:
     rmarkdown,
     testthat (>= 3.0.0),
     xtable
+Additional_repositories: https://stan-dev.r-universe.dev
 Config/testthat/edition: 3
 VignetteBuilder: knitr
 Imports: 
-    BH,
     dplyr,
-    inline,
-    methods,
-    Rcpp (>= 1.1.1),
-    RcppEigen,
-    RcppParallel (>= 5.0.1),
-    rstan (>= 2.18.1),
-    rstantools (>= 2.6.0),
-    StanHeaders,
+    posterior,
     stats
-Biarch: true
-LinkingTo: 
-    BH (>= 1.66.0),
-    Rcpp (>= 1.1.1),
-    RcppEigen (>= 0.3.3.3.0),
-    RcppParallel (>= 5.0.1),
-    rstan (>= 2.18.1),
-    StanHeaders (>= 2.18.0)
-SystemRequirements: GNU make
