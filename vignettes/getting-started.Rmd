@@ -84,6 +84,7 @@ incident_size_distribution
 To fit the conditional ordinal stereotype model, use the `cosmic()` function. This compiles the Stan program, prepares the Seattle data, and draws samples from the posterior distribution for the officer effects $\boldsymbol\lambda$ and the ordinal score parameters $\mathbf{s}$. The conditional likelihood calculation is parallelized across incidents, so `threads` controls within-chain parallelism. In this example it is usually better to let chains run sequentially (`cores = 1`) and use the available CPU budget inside each chain.
 
 ```{r fit-seattle, eval = FALSE}
+# 5-6 hours?
 fit <- cosmic(d,
               incidentID = id,
               officerID  = idOff,
@@ -99,11 +100,14 @@ fit <- cosmic(d,
 if(FALSE)
 {
   SPDdiag <- diagnose(fit)
+  
+  future::plan(future::multisession, workers = 4)
   flag_officer_tail_pct <- 0.05
   off_summary <- officer_summary(fit,
                                  pct_threshold = 0.25,
                                  pct_tail = flag_officer_tail_pct)
   SPDoff_summary <- off_summary
+  
   SPDdraws <- posterior(fit, pars="sDelta")
   save(SPDdiag, SPDoff_summary, SPDdraws, file="vignettes/SPDprecompute.RData")
 }
