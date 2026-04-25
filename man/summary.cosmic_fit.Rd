@@ -20,11 +20,11 @@
 \code{print.cosmic_fit()} returns \code{x} invisibly.
 
 \code{summary.cosmic_fit()} returns the summary matrix produced by the
-underlying \code{stanfit} summary method.
+underlying fit summary method.
 }
 \description{
 Methods for inspecting fitted objects of class \code{"cosmic_fit"}.
-\code{print()} shows a compact Stan summary for the main model parameters,
+\code{print()} shows a compact posterior summary for the main model parameters,
 while \code{summary()} returns the full summary matrix from the underlying
-\code{stanfit} object.
+CmdStan fit object.
 }

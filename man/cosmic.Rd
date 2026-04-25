@@ -45,7 +45,8 @@ parallelization (e.g., via \code{reduce_sum}), this should be set so that
 }
 \value{
 An object of class \code{"cosmic_fit"} containing:
-\item{fit}{The fitted \code{stanfit} object.}
+\item{fit}{The fitted \code{CmdStanMCMC} object.}
+\item{model}{The compiled \code{CmdStanModel} used for sampling.}
 \item{data}{The processed data passed to Stan, including an
 \code{officer_lookup} table that maps sequential \code{idOff} values back
 to the original \code{officerID} values supplied by the user.}
@@ -60,7 +61,7 @@ confounding and estimate actor-specific latent propensities relative to their pe
 The likelihood is evaluated using a dynamic programming algorithm for the
 Poisson-multinomial normalization term, enabling efficient computation for incidents
 involving multiple actors. Posterior inference is performed via Markov chain Monte Carlo
-using \pkg{rstan}.
+using \pkg{cmdstanr}.
 
 The COSMIC model is an ordinal regression model that estimates actor-specific latent
 propensities while conditioning on the set of outcomes observed within each event.

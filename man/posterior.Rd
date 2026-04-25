@@ -12,13 +12,13 @@ posterior(object, ...)
 \arguments{
 \item{object}{A fitted object of class \code{"cosmic_fit"}.}
 
-\item{...}{Additional arguments passed to \code{rstan::extract()}.}
+\item{...}{Additional arguments passed to \code{object$fit$draws()}.}
 
 \item{pars}{Optional character vector of parameter names to extract
 (e.g., \code{"lambda"}, \code{"sDelta"}). Defaults to all parameters.}
 
 \item{tidy}{Logical; if \code{FALSE} (default), returns a list of arrays
-as in \code{rstan::extract()}. If \code{TRUE}, returns a data frame
+as a named list of posterior draw arrays. If \code{TRUE}, returns a data frame
 with one row per draw.}
 }
 \value{
@@ -29,8 +29,8 @@ columns corresponding to parameters (expanded with indices where needed).
 }
 \description{
 Extracts posterior samples from a fitted COSMIC model. This is a
-convenience wrapper around \code{rstan::extract()} that avoids direct
-dependence on \pkg{rstan} in user code.
+convenience wrapper around CmdStan draws extraction that avoids direct
+dependence on \pkg{cmdstanr} in user code.
 }
 \examples{
 \dontrun{
