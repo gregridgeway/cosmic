@@ -1,7 +1,7 @@
 #' Generate initial values for COSMIC model parameters
 #'
 #' Internal helper that constructs a list of initial values for the
-#' Markov chains used in \pkg{rstan}. Multiple initialization strategies
+#' Markov chains used in Stan backends. Multiple initialization strategies
 #' are used to improve robustness of sampling and reduce sensitivity to
 #' starting values.
 #'
@@ -42,7 +42,7 @@
 #'   of initial values to generate
 #'
 #' @return A list of length equal to the number of chains, where each element
-#'   is a named list of initial values compatible with \code{rstan::sampling()}
+#'   is a named list of initial values compatible with Stan sampling interfaces
 #'
 #' @details
 #' Good initialization can substantially improve convergence and reduce

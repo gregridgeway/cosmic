@@ -224,96 +224,45 @@ print.cosmic_diagnostics <- function(x, ...) {
 }
 
 .collect_sampler_diagnostics <- function(fit, ebfmi_threshold = 0.2) {
-  sampler_params <- tryCatch(
-    rstan::get_sampler_params(fit, inc_warmup = FALSE),
+  diagnostic_summary <- tryCatch(
+    fit$diagnostic_summary(),
     error = function(e) NULL
   )
 
-  n_chains <- length(sampler_params)
-
+  n_chains <- tryCatch(as.integer(fit$num_chains()), error = function(e) 1L)
   divergences <- 0L
   treedepth_saturated <- 0L
-  max_treedepth <- .get_max_treedepth(fit)
+  max_treedepth <- 10L
   ebfmi <- numeric()
 
-  if (length(sampler_params) > 0L) {
-    divergences <- sum(vapply(
-      sampler_params,
-      function(chain_params) {
-        if ("divergent__" %in% colnames(chain_params)) {
-          sum(chain_params[, "divergent__"], na.rm = TRUE)
-        } else {
-          0
-        }
-      },
-      numeric(1)
-    ))
+  if (is.data.frame(diagnostic_summary) || is.matrix(diagnostic_summary)) {
+    diag_df <- as.data.frame(diagnostic_summary, stringsAsFactors = FALSE)
+    names(diag_df) <- tolower(names(diag_df))
 
-    treedepth_saturated <- sum(vapply(
-      sampler_params,
-      function(chain_params) {
-        if ("treedepth__" %in% colnames(chain_params)) {
-          sum(chain_params[, "treedepth__"] >= max_treedepth, na.rm = TRUE)
-        } else {
-          0
-        }
-      },
-      numeric(1)
-    ))
+    divergence_col <- intersect(c("divergences", "num_divergent"), names(diag_df))
+    if (length(divergence_col)) {
+      divergences <- sum(diag_df[[divergence_col[1]]], na.rm = TRUE)
+    }
 
-    ebfmi <- vapply(
-      sampler_params,
-      .compute_ebfmi,
-      numeric(1)
-    )
+    treedepth_col <- intersect(c("treedepth", "num_max_treedepth"), names(diag_df))
+    if (length(treedepth_col)) {
+      treedepth_saturated <- sum(diag_df[[treedepth_col[1]]], na.rm = TRUE)
+    }
+
+    ebfmi_col <- intersect(c("ebfmi", "e_bfmi"), names(diag_df))
+    if (length(ebfmi_col)) {
+      ebfmi <- as.numeric(diag_df[[ebfmi_col[1]]])
+    }
   }
 
   list(
-    n_chains = if (n_chains > 0L) n_chains else 1L,
+    n_chains = if (is.finite(n_chains) && n_chains > 0L) n_chains else 1L,
     divergences = as.integer(divergences),
     treedepth_saturated = as.integer(treedepth_saturated),
     max_treedepth = max_treedepth,
     ebfmi = ebfmi,
     low_ebfmi_chains = which(is.finite(ebfmi) & ebfmi < ebfmi_threshold)
   )
-}
-
-.compute_ebfmi <- function(chain_params) {
-  if (!"energy__" %in% colnames(chain_params)) {
-    return(NA_real_)
-  }
-
-  energy <- as.numeric(chain_params[, "energy__"])
-  energy <- energy[is.finite(energy)]
-
-  if (length(energy) < 2L) {
-    return(NA_real_)
-  }
-
-  numerator <- mean(diff(energy)^2)
-  denominator <- stats::var(energy)
-
-  if (!is.finite(denominator) || denominator <= 0) {
-    return(NA_real_)
-  }
-
-  numerator / denominator
-}
-
-.get_max_treedepth <- function(fit) {
-  stan_args <- tryCatch(fit@stan_args, error = function(e) NULL)
-
-  if (!length(stan_args)) {
-    return(10L)
-  }
-
-  first_control <- stan_args[[1]]$control
-
-  if (is.null(first_control) || is.null(first_control$max_treedepth)) {
-    return(10L)
-  }
-
-  as.integer(first_control$max_treedepth)
 }
 
 .summary_column <- function(summary_matrix, name) {
