@@ -1,6 +1,6 @@
 functions {
 
-  real logDenomDP_logspace(vector lambda, vector s, int[] y, int nOff) {
+  real logDenomDP_logspace(vector lambda, vector s, array[] int y, int nOff) {
     int m = nOff;
     int J = num_elements(s);
 
@@ -20,7 +20,7 @@ functions {
       logK += log_norm;
     }
 
-    int k[J];
+    array[J] int k;
     for (j in 1:J) k[j] = 0;
     for (i in 1:m) k[y[i]] += 1;
 
@@ -28,7 +28,7 @@ functions {
 
     int d = J - 1;
 
-    int dims[d];
+    array[d] int dims;
     int total_non_J = 0;
     int total_states = 1;
 
@@ -38,7 +38,7 @@ functions {
       total_states *= dims[j];
     }
 
-    int strides[d];
+    array[d] int strides;
     strides[1] = 1;
     for (j in 2:d)
       strides[j] = strides[j-1] * dims[j-1];
@@ -51,7 +51,7 @@ functions {
 
     int kJ = k[J];
 
-    int u[d];
+    array[d] int u;
 
     for (r in 1:m) {
 
