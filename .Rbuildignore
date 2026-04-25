@@ -5,3 +5,7 @@
 ^\.check$
 ^check$
 ^\.github$
+^\.Rhistory$
+^cmdstan-out$
+^\.positai$
+^\.claude$
