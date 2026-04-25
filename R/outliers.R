@@ -161,6 +161,11 @@ officer_summary <- function(object,
   1L + sum(x[1] > x[-1])
 }
 
+.officer_summary_ranks <- function(lambda_i, lambda_peers)
+{
+  1L + rowSums(lambda_i > lambda_peers)
+}
+
 .officer_lookup <- function(stan_data, n_off)
 {
   lookup <- stan_data$officer_lookup
@@ -211,13 +216,10 @@ officer_summary <- function(object,
       lam975 = NA_real_
     )
   } else {
-    ranks <- apply(
-      context$lambda_draws[, c(i_id, i_peers), drop = FALSE],
-      1,
-      .officer_summary_rank
-    )
-    lam_contrast <- context$lambda_draws[, i_id] -
-      rowMeans(context$lambda_draws[, i_peers, drop = FALSE])
+    lambda_i <- context$lambda_draws[, i_id]
+    lambda_peers <- context$lambda_draws[, i_peers, drop = FALSE]
+    ranks <- .officer_summary_ranks(lambda_i, lambda_peers)
+    lam_contrast <- lambda_i - rowMeans(lambda_peers)
 
     stats <- list(
       pRankToppct = mean(ranks >= (1 - context$pct_tail) * (n_peers + 1)),
@@ -253,7 +255,8 @@ officer_summary <- function(object,
         future.globals = list(
           context = context,
           .officer_summary_one = .officer_summary_one,
-          .officer_summary_rank = .officer_summary_rank
+          .officer_summary_rank = .officer_summary_rank,
+          .officer_summary_ranks = .officer_summary_ranks
         ),
         future.packages = "stats"
       ))
