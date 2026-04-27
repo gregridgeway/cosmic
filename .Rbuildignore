@@ -1,11 +1,16 @@
 ^cosmic\.Rproj$
 ^\.Rproj\.user$
 ^README\.Rmd$
+^cran-comments\.md$
+^.*\.Rcheck$
+^cosmic_.*\.tar\.gz$
 ^LICENSE\.md$
 ^\.check$
 ^check$
 ^\.github$
 ^\.Rhistory$
+^desktop\.ini$
+^.*desktop\.ini$
 ^cmdstan-out$
 ^\.positai$
 ^\.claude$

@@ -1,5 +1,5 @@
 Package: cosmic
-Title: COSMIC - Conditional Ordinal Stereotype Model for Incident-Level Comparison
+Title: Conditional Ordinal Stereotype Model for Incident-Level Comparison
 Version: 0.5
 Authors@R: 
     person("Greg", "Ridgeway", , "gridge@upenn.edu", role = c("aut", "cre"))
@@ -23,7 +23,6 @@ Suggests:
     testthat (>= 3.0.0),
     xtable
 Additional_repositories: https://stan-dev.r-universe.dev
-Remotes: stan-dev/cmdstanr
 Config/testthat/edition: 3
 VignetteBuilder: knitr
 Imports: 
