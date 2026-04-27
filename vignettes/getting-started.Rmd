@@ -11,7 +11,8 @@ editor_options:
 
 ```{r setup, include=FALSE}
 # del /s /a:h desktop.ini
-vignette_dir <- dirname(knitr::current_input(dir = TRUE))
+vignette_input <- knitr::current_input(dir = TRUE)
+vignette_dir <- if (is.null(vignette_input)) getwd() else dirname(vignette_input)
 fig_dir <- tempdir()
 
 knitr::opts_chunk$set(
