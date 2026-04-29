@@ -10,6 +10,15 @@
 #' involving multiple actors. Posterior inference is performed via Markov chain Monte Carlo
 #' using \pkg{cmdstanr}.
 #'
+#' Because \pkg{cmdstanr} is not distributed on CRAN, users may need to install it
+#' from the Stan R-universe repository before fitting models:
+#' \preformatted{
+#' install.packages("cmdstanr",
+#'                  repos = c("https://stan-dev.r-universe.dev",
+#'                            getOption("repos")))
+#' cmdstanr::install_cmdstan()
+#' }
+#'
 #' @param data A data frame containing one row per actor-event observation
 #' @param incidentID A column (unquoted) identifying the event or incident
 #' @param officerID A column (unquoted) identifying the actor (e.g., officer)
@@ -40,6 +49,12 @@
 #' \code{cores} and \code{threads}, users should ensure that total CPU usage remains within
 #' hardware limits.
 #'
+#' @references
+#' Ridgeway, G. (2026). A Conditional Ordinal Stereotype Model to Estimate
+#' Police Officers' Propensity to Escalate Force. \emph{Journal of the
+#' American Statistical Association}, 1--12.
+#' \url{https://www.tandfonline.com/doi/full/10.1080/01621459.2025.2597050}
+#'
 #' @return
 #' An object of class \code{"cosmic_fit"} containing:
 #' \item{fit}{The fitted \code{CmdStanMCMC} object.}
@@ -49,7 +64,7 @@
 #'   to the original \code{officerID} values supplied by the user.}
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' d <- data.frame(
 #'   id = c(1,1,2,2),
 #'   idOff = c(1,2,1,2),
@@ -57,10 +72,10 @@
 #' )
 #'
 #' fit <- cosmic(d, id, idOff, y,
-#'               iter = 1000,
-#'               chains = 2,
+#'               iter = 300,
+#'               chains = 1,
 #'               cores = 1,
-#'               threads = 4)
+#'               threads = 1)
 #'
 #' print(fit)
 #' }

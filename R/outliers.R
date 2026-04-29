@@ -38,11 +38,17 @@
 #'   \code{c("cosmic_officer_summary", "data.frame")}.
 #'
 #' @examples
-#' \dontrun{
-#' future::plan(future::multisession, workers = 4)
-#' progressr::handlers("cli")
+#' \donttest{
+#' d <- data.frame(
+#'   id = c(1,1,2,2),
+#'   idOff = c(1,2,1,2),
+#'   y = c(1,2,1,3)
+#' )
+#' fit <- cosmic(d, id, idOff, y, iter = 300, chains = 1, cores = 1, threads = 1)
 #'
-#' fit <- cosmic(d, id, idOff, y)
+#' # use plan() and handlers() to run officer_summary() in parallel
+#' # future::plan(future::multisession, workers = 4)
+#' # progressr::handlers("cli")
 #' off_summary <- officer_summary(fit)
 #' outlier_report(off_summary)
 #' }
@@ -295,11 +301,20 @@ officer_summary <- function(object,
 #'   report includes both \code{idOffOrig} and \code{idOff}.
 #'
 #' @examples
-#' \dontrun{
-#' fit <- cosmic(d, id, idOff, y)
+#' \donttest{
+#' d <- data.frame(
+#'   id = c(1,1,2,2),
+#'   idOff = c(1,2,1,2),
+#'   y = c(1,2,1,3)
+#' )
+#' fit <- cosmic(d, id, idOff, y, iter = 300, chains = 1, cores = 1, threads = 1)
 #' off_summary <- officer_summary(fit)
+#'
 #' outliers <- outlier_report(off_summary)
-#' knitr::kable(outliers)
+#' outliers
+#'
+#' # For a nicer looking report use kable()
+#' # knitr::kable(outliers)
 #' }
 #'
 #' @export

@@ -14,8 +14,14 @@
 #' columns corresponding to parameters (expanded with indices where needed).
 #'
 #' @examples
-#' \dontrun{
-#' fit <- cosmic(d, id, idOff, y)
+#' \donttest{
+#' d <- data.frame(
+#'   id = c(1,1,2,2),
+#'   idOff = c(1,2,1,2),
+#'   y = c(1,2,1,3)
+#' )
+#'
+#' fit <- cosmic(d, id, idOff, y, iter = 300, chains = 1, cores = 1, threads = 1)
 #'
 #' # raw posterior draws
 #' draws <- posterior(fit)

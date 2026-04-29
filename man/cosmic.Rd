@@ -63,6 +63,15 @@ Poisson-multinomial normalization term, enabling efficient computation for incid
 involving multiple actors. Posterior inference is performed via Markov chain Monte Carlo
 using \pkg{cmdstanr}.
 
+Because \pkg{cmdstanr} is not distributed on CRAN, users may need to install it
+from the Stan R-universe repository before fitting models:
+\preformatted{
+install.packages("cmdstanr",
+                 repos = c("https://stan-dev.r-universe.dev",
+                           getOption("repos")))
+cmdstanr::install_cmdstan()
+}
+
 The COSMIC model is an ordinal regression model that estimates actor-specific latent
 propensities while conditioning on the set of outcomes observed within each event.
 This conditioning removes all event-level factors that are shared across actors,
@@ -77,7 +86,7 @@ Parallel computation is supported both across chains and within chains. When spe
 hardware limits.
 }
 \examples{
-\dontrun{
+\donttest{
 d <- data.frame(
   id = c(1,1,2,2),
   idOff = c(1,2,1,2),
@@ -85,14 +94,20 @@ d <- data.frame(
 )
 
 fit <- cosmic(d, id, idOff, y,
-              iter = 1000,
-              chains = 2,
+              iter = 300,
+              chains = 1,
               cores = 1,
-              threads = 4)
+              threads = 1)
 
 print(fit)
 }
 
+}
+\references{
+Ridgeway, G. (2026). A Conditional Ordinal Stereotype Model to Estimate
+Police Officers' Propensity to Escalate Force. \emph{Journal of the
+American Statistical Association}, 1--12.
+\url{https://www.tandfonline.com/doi/full/10.1080/01621459.2025.2597050}
 }
 \seealso{
 \code{\link{posterior}}, \code{\link{summary.cosmic_fit}}

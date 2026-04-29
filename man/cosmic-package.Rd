@@ -3,9 +3,19 @@
 \docType{package}
 \name{cosmic-package}
 \alias{cosmic-package}
-\title{cosmic: COSMIC - Conditional Ordinal Stereotype Model for Incident-Level Comparison}
+\title{cosmic: Conditional Ordinal Stereotype Model for Incident-Level Comparison}
 \description{
-Implements the Conditional Ordinal Stereotype Model for Incident-Level Comparison (COSMIC), a method for analyzing ordinal outcomes observed across multiple actors within shared events. The model uses a conditional likelihood to remove event-level confounding and estimate actor-specific propensities relative to their peers. Efficient computation is achieved via a dynamic programming algorithm for the Poisson-multinomial normalization term, enabling scalable estimation with Markov chain Monte Carlo. The package provides tools for data preparation, model fitting using Stan, and extraction of posterior summaries for comparative inference. Estimation of police officer propensity to escalate force is the primary motivation for the model.
+Implements the Conditional Ordinal Stereotype Model for Incident-Level Comparison (COSMIC), a method for analyzing ordinal outcomes observed across multiple actors within shared events. The model uses a conditional likelihood to remove event-level confounding and estimate actor-specific propensities relative to their peers. Efficient computation is achieved via a dynamic programming algorithm for the Poisson-multinomial normalization term, enabling scalable estimation with Markov chain Monte Carlo. The package provides tools for data preparation, model fitting using Stan, and extraction of posterior summaries for comparative inference. Estimation of police officer propensity to escalate force is the primary motivation for the model. For more details see Ridgeway (2026) "A Conditional Ordinal Stereotype Model to Estimate Police Officers’ Propensity to Escalate Force" \doi{10.1080/01621459.2025.2597050}.
+}
+\details{
+Fitting COSMIC models requires the optional \pkg{cmdstanr} package and a local
+CmdStan installation. If these are not already installed, run:
+\preformatted{
+install.packages("cmdstanr",
+                 repos = c("https://stan-dev.r-universe.dev",
+                           getOption("repos")))
+cmdstanr::install_cmdstan()
+}
 }
 \author{
 \strong{Maintainer}: Greg Ridgeway \email{gridge@upenn.edu}
