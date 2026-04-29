@@ -1,3 +1,13 @@
+#' @details
+#' Fitting COSMIC models requires the optional \pkg{cmdstanr} package and a local
+#' CmdStan installation. If these are not already installed, run:
+#' \preformatted{
+#' install.packages("cmdstanr",
+#'                  repos = c("https://stan-dev.r-universe.dev",
+#'                            getOption("repos")))
+#' cmdstanr::install_cmdstan()
+#' }
+#'
 #' @keywords internal
 "_PACKAGE"
 
