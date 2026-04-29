@@ -39,6 +39,23 @@ test_that("cosmic runs on tiny dataset", {
     y = c(1,2,1,3,2)
   )
 
+  if (!requireNamespace("cmdstanr", quietly = TRUE)) {
+    expect_error(
+      cosmic(d, id, idOff, y, iter = 200, chains = 1, threads = 1),
+      "cmdstanr.*required"
+    )
+    return()
+  }
+
+  cmdstan_path <- tryCatch(cmdstanr::cmdstan_path(), error = function(e) "")
+  if (!nzchar(cmdstan_path)) {
+    expect_error(
+      cosmic(d, id, idOff, y, iter = 200, chains = 1, threads = 1),
+      "CmdStan is not installed"
+    )
+    return()
+  }
+
   fit <- cosmic(d, id, idOff, y,
                 iter = 200,
                 chains = 1,
@@ -352,6 +369,10 @@ test_that("stan summary extractor handles matrix and list outputs", {
 }
 
 test_that("DP matches complete enumeration across incident shapes", {
+  skip_if_not_installed("cmdstanr")
+
+  cmdstan_path <- tryCatch(cmdstanr::cmdstan_path(), error = function(e) "")
+  skip_if(!nzchar(cmdstan_path), "CmdStan is not installed")
 
   stan_file <- system.file("stan", "cosmic.stan", package = "cosmic")
   if (!nzchar(stan_file)) {

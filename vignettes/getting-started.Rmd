@@ -84,6 +84,15 @@ incident_size_distribution
 
 To fit the conditional ordinal stereotype model, use the `cosmic()` function. This compiles the Stan program, prepares the Seattle data, and draws samples from the posterior distribution for the officer effects $\boldsymbol\lambda$ and the ordinal score parameters $\mathbf{s}$. The conditional likelihood calculation is parallelized across incidents, so `threads` controls within-chain parallelism. In this example it is usually better to let chains run sequentially (`cores = 1`) and use the available CPU budget inside each chain.
 
+COSMIC fits models through `cmdstanr`, which is distributed through the Stan R-universe rather than CRAN. If `cmdstanr` or CmdStan is not already installed, run:
+
+```{r install-cmdstanr, eval = FALSE}
+install.packages("cmdstanr",
+                 repos = c("https://stan-dev.r-universe.dev",
+                           getOption("repos")))
+cmdstanr::install_cmdstan()
+```
+
 ```{r fit-seattle, eval = FALSE}
 # 5-6 hours?
 fit <- cosmic(d,
