@@ -56,6 +56,19 @@ jobs:
         with:
           token: ${{ secrets.RHUB_TOKEN }}
           job-config: ${{ matrix.config.job-config }}
+      - name: Configure Stan R-universe
+        shell: Rscript {0}
+        run: |
+          profile <- path.expand("~/.Rprofile")
+          dir.create(dirname(profile), recursive = TRUE, showWarnings = FALSE)
+          lines <- c(
+            'local({',
+            '  repos <- getOption("repos")',
+            '  repos <- repos[names(repos) != "stan"]',
+            '  options(repos = c(stan = "https://stan-dev.r-universe.dev", repos))',
+            '})'
+          )
+          cat(paste(lines, collapse = "\n"), "\n", file = profile, append = TRUE)
       - uses: r-hub/actions/setup-deps@v1
         with:
           token: ${{ secrets.RHUB_TOKEN }}
@@ -87,6 +100,19 @@ jobs:
         with:
           token: ${{ secrets.RHUB_TOKEN }}
           job-config: ${{ matrix.config.job-config }}
+      - name: Configure Stan R-universe
+        shell: Rscript {0}
+        run: |
+          profile <- path.expand("~/.Rprofile")
+          dir.create(dirname(profile), recursive = TRUE, showWarnings = FALSE)
+          lines <- c(
+            'local({',
+            '  repos <- getOption("repos")',
+            '  repos <- repos[names(repos) != "stan"]',
+            '  options(repos = c(stan = "https://stan-dev.r-universe.dev", repos))',
+            '})'
+          )
+          cat(paste(lines, collapse = "\n"), "\n", file = profile, append = TRUE)
       - uses: r-hub/actions/setup-deps@v1
         with:
           job-config: ${{ matrix.config.job-config }}
